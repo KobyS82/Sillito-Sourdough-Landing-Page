@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sillito Sourdough</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <p class="header-label">Handcrafted &bull; Small Batch &bull; Austin, TX</p>
+      <h1>Sillito Sourdough</h1>
+      <p class="tagline">Slow-fermented. Hand-shaped. Fresh every week.</p>
+    </div>
+  </header>
+
+  <div class="availability-bar">
+    <div class="container">
+      <span class="avail-dot"></span>
+      <strong>This week:</strong>&nbsp; 4 loaves available &nbsp;&mdash;&nbsp; Pickup locations announced by email
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="container">
+      <p>Every week I bake a small batch of fresh sourdough right here in Austin &mdash; no preservatives, no shortcuts. Just good bread made the slow way. Reserve your spot below and I'll reach out with pickup details.</p>
+      <a href="#order" class="btn">Reserve a Loaf</a>
+    </div>
+  </section>
+
+  <section id="order" class="order-section">
+    <div class="container">
+      <h2>Join the Queue</h2>
+      <p class="section-desc">Fill out the form and I'll confirm your spot and share pickup info by email. No payment needed until pickup.</p>
+
+      <div class="notice">
+        <strong>Pickup Notice:</strong> Pickup locations and times vary week to week and will be shared by email after your order is confirmed. Locations are in the Austin area.
+      </div>
+
+      <form id="order-form" action="https://formspree.io/f/xlgaywdr" method="POST">
+        <input type="hidden" name="_subject" value="New Sourdough Order - Sillito Sourdough" />
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="first-name">First Name <span class="req">*</span></label>
+            <input type="text" id="first-name" name="first_name" placeholder="First" required />
+          </div>
+          <div class="form-group">
+            <label for="last-name">Last Name <span class="req">*</span></label>
+            <input type="text" id="last-name" name="last_name" placeholder="Last" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address <span class="req">*</span></label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          <small>Used only to confirm your order and share pickup details.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="loaves">How many loaves? <span class="req">*</span></label>
+          <select id="loaves" name="loaves" required>
+            <option value="" disabled selected>Select quantity</option>
+            <option value="1">1 loaf</option>
+            <option value="2">2 loaves</option>
+            <option value="3">3 loaves</option>
+            <option value="4">4 loaves (whole batch)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notes (optional)</label>
+          <textarea id="notes" name="notes" placeholder="Any questions or special requests..." rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-full" id="submit-btn">Reserve My Spot</button>
+        <p class="form-note">No spam. No accounts. Just bread.</p>
+      </form>
+
+      <div id="success-msg" class="success-msg" style="display:none;">
+        <h3>You're in the queue!</h3>
+        <p>I'll email you soon with pickup details. Thanks for supporting Sillito Sourdough!</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="payment-section">
+    <div class="container">
+      <h2>Payment</h2>
+      <p class="section-desc">Pay at pickup &mdash; whichever works best for you.</p>
+      <div class="payment-grid">
+        <div class="payment-card">
+          <div class="pay-icon">$</div>
+          <h3>Cash</h3>
+          <p>Bring exact change to pickup. Simple and easy.</p>
+        </div>
+        <div class="payment-card">
+          <div class="pay-icon">V</div>
+          <h3>Venmo</h3>
+          <p>Send after pickup is confirmed.</p>
+          <a href="https://venmo.com/YOUR_VENMO_HANDLE" target="_blank" rel="noopener" class="btn btn-venmo">@YourHandle</a>
+        </div>
+      </div>
+      <p class="price-note">Pricing shared when your order is confirmed.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p class="footer-name">Sillito Sourdough</p>
+      <p class="footer-sub">Austin, TX &bull; Fresh weekly &bull; Made with love</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
