@@ -20,9 +20,9 @@
   </header>
 
   <div class="availability-bar">
-    <div class="container">
+    <div class="container" id="avail-bar-content">
       <span class="avail-dot"></span>
-      <strong>This week:</strong>&nbsp; 4 loaves available &nbsp;&mdash;&nbsp; Pickup locations announced by email
+      <strong>Loading...</strong>
     </div>
   </div>
 
@@ -60,6 +60,13 @@
           <label for="email">Email Address <span class="req">*</span></label>
           <input type="email" id="email" name="email" placeholder="you@example.com" required />
           <small>Used only to confirm your order and share pickup details.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="week">Which week? <span class="req">*</span></label>
+          <select id="week" name="week" required>
+            <option value="" disabled selected>Loading availability...</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -117,7 +124,6 @@
     </div>
   </footer>
 
-  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

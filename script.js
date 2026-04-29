@@ -1,60 +1,102 @@
 const form = document.getElementById('order-form');
 const submitBtn = document.getElementById('submit-btn');
 const successMsg = document.getElementById('success-msg');
-const availBar = document.querySelector('.availability-bar .container');
+const availBar = document.getElementById('avail-bar-content');
+const weekSelect = document.getElementById('week');
 const loavesSelect = document.getElementById('loaves');
 
-function initAvailability() {
-  const n = LOAVES_AVAILABLE;
+let weeks = [];
 
-  // Update the availability bar text
-  const dot = availBar.querySelector('.avail-dot');
-  const strong = availBar.querySelector('strong');
+const LOAF_LABELS = ['', '1 loaf', '2 loaves', '3 loaves', '4 loaves (whole batch)'];
 
-  if (n <= 0) {
+async function init() {
+  try {
+    const res = await fetch('/api/availability');
+    weeks = await res.json();
+  } catch {
+    weeks = [];
+  }
+  renderBar();
+  renderWeekSelect();
+}
+
+function renderBar() {
+  const upcoming = weeks.filter((w) => w.available > 0);
+  availBar.innerHTML = '';
+
+  const dot = document.createElement('span');
+  dot.className = 'avail-dot';
+  availBar.appendChild(dot);
+  availBar.append(' ');
+
+  if (upcoming.length === 0) {
     dot.style.background = '#e05252';
     dot.style.animation = 'none';
-    strong.textContent = 'Sold out this week!';
-    availBar.innerHTML = '';
-    availBar.appendChild(dot);
-    availBar.append(' ');
-    availBar.appendChild(strong);
-    availBar.append(' —  Join the waitlist below for next week.');
-
-    // Disable the select and button, update button label
-    loavesSelect.disabled = true;
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Sold Out This Week';
-    submitBtn.style.background = '#999';
-
-    // Remove options that exceed availability
+    const s = document.createElement('strong');
+    s.textContent = 'Sold out this week';
+    availBar.appendChild(s);
+    availBar.append(' — reserve your spot below for the next available batch.');
   } else {
-    strong.textContent = 'This week:';
-    availBar.querySelector('strong').after(
-      Object.assign(document.createTextNode('  ' + n + ' loaf' + (n === 1 ? '' : 'ves') + ' available  —  Pickup locations announced by email'))
+    const next = upcoming[0];
+    const s = document.createElement('strong');
+    s.textContent = next.label + ':';
+    availBar.appendChild(s);
+    availBar.append(
+      `  ${next.available} loaf${next.available === 1 ? '' : 'ves'} available  —  Pickup locations announced by email`
     );
-    // Hide the old text node (replace the whole bar content)
-    availBar.innerHTML = '';
-    const newDot = document.createElement('span');
-    newDot.className = 'avail-dot';
-    const newStrong = document.createElement('strong');
-    newStrong.textContent = 'This week:';
-    availBar.appendChild(newDot);
-    availBar.append(' ');
-    availBar.appendChild(newStrong);
-    availBar.append('  ' + n + ' loaf' + (n === 1 ? '' : 'ves') + ' available  —  Pickup locations announced by email');
-
-    // Remove select options that exceed availability
-    Array.from(loavesSelect.options).forEach((opt) => {
-      const val = parseInt(opt.value, 10);
-      if (val > n) opt.remove();
-    });
   }
 }
 
-initAvailability();
+function renderWeekSelect() {
+  weekSelect.innerHTML = '';
+  const upcoming = weeks.filter((w) => w.available > 0);
 
-// Honeypot: bots fill hidden fields, humans don't
+  if (upcoming.length === 0) {
+    weekSelect.appendChild(new Option('No availability right now', '', true, true));
+    weekSelect.options[0].disabled = true;
+    weekSelect.disabled = true;
+    loavesSelect.disabled = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sold Out';
+    submitBtn.style.background = '#999';
+    return;
+  }
+
+  const placeholder = new Option('Select a week', '', true, true);
+  placeholder.disabled = true;
+  weekSelect.appendChild(placeholder);
+
+  upcoming.forEach((w) => {
+    weekSelect.appendChild(
+      new Option(`${w.label}  (${w.available} loaf${w.available === 1 ? '' : 'ves'} left)`, w.id)
+    );
+  });
+
+  if (upcoming.length === 1) {
+    weekSelect.value = upcoming[0].id;
+    syncLoavesSelect(upcoming[0].available);
+  }
+}
+
+function syncLoavesSelect(max) {
+  const prev = loavesSelect.value;
+  loavesSelect.innerHTML = '';
+  loavesSelect.appendChild(new Option('Select quantity', '', true, true));
+  loavesSelect.options[0].disabled = true;
+
+  for (let i = 1; i <= Math.min(max, 4); i++) {
+    loavesSelect.appendChild(new Option(LOAF_LABELS[i], String(i)));
+  }
+
+  if (prev && parseInt(prev) <= max) loavesSelect.value = prev;
+}
+
+weekSelect.addEventListener('change', () => {
+  const week = weeks.find((w) => w.id === weekSelect.value);
+  if (week) syncLoavesSelect(week.available);
+});
+
+// Honeypot — bots fill this, humans don't
 const honeypot = document.createElement('input');
 honeypot.type = 'text';
 honeypot.name = '_gotcha';
@@ -65,8 +107,6 @@ form.appendChild(honeypot);
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-
-  // Reject if honeypot was filled (bot)
   if (honeypot.value) return;
 
   submitBtn.disabled = true;
@@ -91,8 +131,10 @@ form.addEventListener('submit', async (e) => {
       submitBtn.textContent = 'Reserve My Spot';
     }
   } catch {
-    alert('Network error — please try again or email me directly.');
+    alert('Network error — please try again.');
     submitBtn.disabled = false;
     submitBtn.textContent = 'Reserve My Spot';
   }
 });
+
+init();

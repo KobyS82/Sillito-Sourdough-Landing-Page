@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Sillito Sourdough</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Lato', sans-serif; background: #f5f0e8; color: #2e1f14; min-height: 100vh; }
+
+    .top-bar {
+      background: #3b2418;
+      color: #c8b89a;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .top-bar h1 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #f5f0e8; }
+    .top-bar a { color: #c8b89a; font-size: 0.85rem; text-decoration: none; }
+    .top-bar a:hover { color: #f5f0e8; }
+
+    .page { max-width: 600px; margin: 2.5rem auto; padding: 0 1.5rem 4rem; }
+
+    /* Login */
+    #login-section { background: #fff; border: 1px solid #d4c4a8; border-radius: 6px; padding: 2rem; }
+    #login-section h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 1rem; color: #3b2418; }
+
+    /* Editor */
+    #editor-section { display: none; }
+    #editor-section h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: #3b2418; margin-bottom: 0.3rem; }
+    .editor-desc { color: #6b5344; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    /* Week rows */
+    .week-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .week-row {
+      background: #fff;
+      border: 1px solid #d4c4a8;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 1rem;
+    }
+    .week-row-label { font-weight: 700; font-size: 0.95rem; }
+    .week-row-label small { display: block; font-weight: 400; color: #6b5344; font-size: 0.8rem; }
+
+    .avail-control { display: flex; align-items: center; gap: 0.5rem; }
+    .avail-control button {
+      width: 28px; height: 28px;
+      border: 1px solid #d4c4a8;
+      background: #f5f0e8;
+      border-radius: 4px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #3b2418;
+    }
+    .avail-control button:hover { background: #e8dcc8; }
+    .avail-count { font-size: 1.1rem; font-weight: 700; min-width: 1.5rem; text-align: center; }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #b84040;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+    }
+    .remove-btn:hover { background: #fdecea; }
+
+    /* Add week form */
+    .add-week-box {
+      background: #fff;
+      border: 1px dashed #d4c4a8;
+      border-radius: 6px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .add-week-box h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; color: #5c3d2e; }
+    .add-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
+
+    label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem; color: #5c3d2e; letter-spacing: 0.03em; }
+    input[type="date"], input[type="text"], input[type="number"], input[type="password"] {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #d4c4a8;
+      border-radius: 4px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.95rem;
+      background: #fff;
+      color: #2e1f14;
+    }
+    input:focus { outline: none; border-color: #7a5c4a; box-shadow: 0 0 0 3px rgba(92,61,46,0.1); }
+
+    .btn {
+      display: inline-block;
+      background: #5c3d2e;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      padding: 0.65rem 1.25rem;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #3b2418; }
+    .btn-full { width: 100%; padding: 0.85rem; font-size: 0.95rem; }
+    .btn-outline {
+      background: none;
+      border: 1px solid #5c3d2e;
+      color: #5c3d2e;
+    }
+    .btn-outline:hover { background: #5c3d2e; color: #fff; }
+
+    /* Status */
+    .status {
+      margin-top: 0.75rem;
+      padding: 0.65rem 1rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .status.ok { background: #eaf5e8; border: 1px solid #7dbb72; color: #2d6b23; display: block; }
+    .status.err { background: #fdecea; border: 1px solid #e07070; color: #8b2020; display: block; }
+
+    .empty-state { color: #6b5344; font-style: italic; font-size: 0.9rem; padding: 1rem 0; }
+    .logout-link { color: #6b5344; font-size: 0.85rem; cursor: pointer; background: none; border: none; text-decoration: underline; margin-top: 1rem; display: inline-block; }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>Sillito Sourdough — Admin</h1>
+  <a href="/">← Back to site</a>
+</div>
+
+<div class="page">
+
+  <!-- Login -->
+  <div id="login-section">
+    <h2>Admin Login</h2>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label for="pw-input">Password</label>
+      <input type="password" id="pw-input" placeholder="Enter admin password" autocomplete="current-password" />
+    </div>
+    <button class="btn btn-full" id="login-btn">Log In</button>
+    <div id="login-status" class="status"></div>
+  </div>
+
+  <!-- Editor -->
+  <div id="editor-section">
+    <h2>Weekly Schedule</h2>
+    <p class="editor-desc">Add upcoming bake weeks and set how many loaves are available. Customers will see these in the order form.</p>
+
+    <div class="week-list" id="week-list">
+      <p class="empty-state">Loading...</p>
+    </div>
+
+    <!-- Add week -->
+    <div class="add-week-box">
+      <h3>Add a week</h3>
+      <div class="add-row">
+        <div>
+          <label for="new-date">Pickup week of</label>
+          <input type="date" id="new-date" />
+        </div>
+        <div>
+          <label for="new-count">Loaves available</label>
+          <input type="number" id="new-count" min="0" max="20" value="4" />
+        </div>
+        <button class="btn btn-outline" id="add-btn">Add</button>
+      </div>
+    </div>
+
+    <button class="btn btn-full" id="save-btn">Save Changes</button>
+    <div id="save-status" class="status"></div>
+
+    <button class="logout-link" id="logout-btn">Log out</button>
+  </div>
+
+</div>
+
+<script>
+  let password = '';
+  let weeks = [];
+
+  const loginSection = document.getElementById('login-section');
+  const editorSection = document.getElementById('editor-section');
+  const loginBtn = document.getElementById('login-btn');
+  const loginStatus = document.getElementById('login-status');
+  const weekList = document.getElementById('week-list');
+  const addBtn = document.getElementById('add-btn');
+  const saveBtn = document.getElementById('save-btn');
+  const saveStatus = document.getElementById('save-status');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  function formatLabel(dateStr) {
+    // dateStr is YYYY-MM-DD
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    return 'Week of ' + date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  }
+
+  function renderWeeks() {
+    weekList.innerHTML = '';
+    if (weeks.length === 0) {
+      weekList.innerHTML = '<p class="empty-state">No weeks added yet. Add one below.</p>';
+      return;
+    }
+    weeks.forEach((w, i) => {
+      const row = document.createElement('div');
+      row.className = 'week-row';
+      row.innerHTML = `
+        <div class="week-row-label">
+          ${w.label}
+          <small>${w.id}</small>
+        </div>
+        <div class="avail-control">
+          <button data-i="${i}" data-delta="-1">−</button>
+          <span class="avail-count">${w.available}</span>
+          <button data-i="${i}" data-delta="1">+</button>
+        </div>
+        <button class="remove-btn" data-remove="${i}" title="Remove">✕</button>
+      `;
+      weekList.appendChild(row);
+    });
+
+    weekList.querySelectorAll('[data-delta]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.i);
+        const delta = parseInt(btn.dataset.delta);
+        weeks[i].available = Math.max(0, weeks[i].available + delta);
+        renderWeeks();
+      });
+    });
+
+    weekList.querySelectorAll('[data-remove]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.remove);
+        weeks.splice(i, 1);
+        renderWeeks();
+      });
+    });
+  }
+
+  async function loadWeeks() {
+    try {
+      const res = await fetch('/api/availability');
+      weeks = await res.json();
+    } catch {
+      weeks = [];
+    }
+    renderWeeks();
+  }
+
+  loginBtn.addEventListener('click', async () => {
+    const pw = document.getElementById('pw-input').value.trim();
+    if (!pw) return;
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Checking...';
+
+    // Verify by attempting to POST with this password
+    try {
+      const res = await fetch('/api/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw, weeks: [] }),
+      });
+
+      if (res.ok) {
+        password = pw;
+        loginSection.style.display = 'none';
+        editorSection.style.display = 'block';
+        await loadWeeks();
+      } else {
+        loginStatus.className = 'status err';
+        loginStatus.textContent = 'Wrong password.';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Log In';
+      }
+    } catch {
+      loginStatus.className = 'status err';
+      loginStatus.textContent = 'Network error — is the site deployed?';
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Log In';
+    }
+  });
+
+  document.getElementById('pw-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginBtn.click();
+  });
+
+  addBtn.addEventListener('click', () => {
+    const dateVal = document.getElementById('new-date').value;
+    const countVal = parseInt(document.getElementById('new-count').value, 10);
+    if (!dateVal) { alert('Pick a date first.'); return; }
+    if (weeks.find((w) => w.id === dateVal)) { alert('That week already exists.'); return; }
+    weeks.push({ id: dateVal, label: formatLabel(dateVal), available: isNaN(countVal) ? 4 : countVal });
+    weeks.sort((a, b) => a.id.localeCompare(b.id));
+    renderWeeks();
+    document.getElementById('new-date').value = '';
+    document.getElementById('new-count').value = '4';
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    saveStatus.className = 'status';
+
+    try {
+      const res = await fetch('/api/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, weeks }),
+      });
+
+      if (res.ok) {
+        saveStatus.className = 'status ok';
+        saveStatus.textContent = 'Saved! The site is updated live.';
+      } else {
+        saveStatus.className = 'status err';
+        saveStatus.textContent = 'Error saving. Try again.';
+      }
+    } catch {
+      saveStatus.className = 'status err';
+      saveStatus.textContent = 'Network error.';
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Changes';
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    password = '';
+    weeks = [];
+    editorSection.style.display = 'none';
+    loginSection.style.display = 'block';
+    document.getElementById('pw-input').value = '';
+    loginStatus.className = 'status';
+  });
+</script>
+</body>
+</html>
