@@ -1,7 +1,3 @@
-// ── UPDATE THIS EACH WEEK ──────────────────────────────────────────────────
-const LOAVES_AVAILABLE = 4;
-// ──────────────────────────────────────────────────────────────────────────
-
 const form = document.getElementById('order-form');
 const submitBtn = document.getElementById('submit-btn');
 const successMsg = document.getElementById('success-msg');
