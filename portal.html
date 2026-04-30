@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Orders — Sillito Sourdough</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .portal-wrap   { max-width: 600px; margin: 3rem auto; padding: 0 1.5rem 4rem; }
+    .portal-card   { background: #fff; border: 1px solid #d4c4a8; border-radius: 8px; padding: 2rem; }
+    .portal-card h2{ font-family: 'Playfair Display', serif; font-size: 1.6rem; color: #3b2418; margin-bottom: 0.4rem; }
+    .portal-card p { color: #6b5344; margin-bottom: 1.25rem; }
+
+    .order-card {
+      border: 1px solid #d4c4a8; border-radius: 6px;
+      padding: 1.25rem; margin-bottom: 1rem; background: #fff;
+    }
+    .order-card-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .order-week { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: #3b2418; }
+    .badge {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 99px;
+    }
+    .badge-pending   { background: #fef3c7; color: #92400e; }
+    .badge-confirmed { background: #d1fae5; color: #065f46; }
+    .badge-completed { background: #e0e7ff; color: #3730a3; }
+    .badge-cancelled { background: #fee2e2; color: #991b1b; }
+
+    .order-detail { font-size: 0.88rem; color: #5c3d2e; margin-bottom: 0.3rem; }
+    .pickup-box {
+      background: #f5f0e8; border-left: 3px solid #5c3d2e;
+      border-radius: 0 4px 4px 0; padding: 0.6rem 0.9rem;
+      font-size: 0.9rem; color: #3b2418; margin-top: 0.75rem;
+    }
+    .empty-state  { color: #6b5344; font-style: italic; padding: 1.5rem 0; text-align: center; }
+    .spinner      { text-align: center; padding: 3rem; color: #6b5344; }
+    .recurring-badge {
+      display: inline-block; background: #e8dcc8; border-radius: 99px;
+      padding: 0.15rem 0.6rem; font-size: 0.75rem; color: #5c3d2e; font-weight: 700;
+      margin-left: 0.5rem;
+    }
+    .profile-row  { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .profile-info { font-size: 0.9rem; color: #5c3d2e; }
+    .profile-info strong { color: #2e1f14; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <p class="header-label">Handcrafted &bull; Small Batch &bull; Austin, TX</p>
+      <h1>Sillito Sourdough</h1>
+      <p class="tagline">Your Orders</p>
+    </div>
+  </header>
+
+  <div class="portal-wrap">
+
+    <!-- Request link section -->
+    <div id="request-section" class="portal-card">
+      <h2>View Your Orders</h2>
+      <p>Enter your email and I'll send you a secure link to view your order history.</p>
+      <form id="request-form">
+        <div class="form-group">
+          <label for="req-email">Email Address <span class="req">*</span></label>
+          <input type="email" id="req-email" placeholder="you@example.com" required autocomplete="email" />
+        </div>
+        <button type="submit" class="btn btn-full" id="req-btn">Send My Link</button>
+        <p class="form-note">Link expires after 24 hours. No account required.</p>
+      </form>
+      <div id="req-sent" style="display:none;" class="success-msg">
+        <h3>Check your email!</h3>
+        <p>If you've ordered with us before, you'll find a link in your inbox within a minute.</p>
+      </div>
+    </div>
+
+    <!-- Orders view (shown after token auth) -->
+    <div id="orders-section" style="display:none;">
+      <div class="portal-card" style="margin-bottom:1.25rem;">
+        <div class="profile-row">
+          <div class="profile-info">
+            <strong id="profile-name"></strong><br>
+            <span id="profile-email"></span>
+            <span id="recurring-badge" class="recurring-badge" style="display:none;">Recurring</span>
+          </div>
+          <a href="/" class="btn" style="font-size:0.8rem;padding:0.5rem 1rem;">Order Again</a>
+        </div>
+        <div class="profile-info">
+          <span id="profile-opts"></span>
+        </div>
+      </div>
+
+      <h2 style="font-family:'Playfair Display',serif;color:#3b2418;margin-bottom:1rem;">Your Orders</h2>
+      <div id="order-list">
+        <div class="spinner">Loading your orders...</div>
+      </div>
+
+      <p style="margin-top:2rem;font-size:0.85rem;color:#6b5344;text-align:center;">
+        Questions? Reply to any confirmation email or <a href="/" style="color:#5c3d2e;">visit the site</a>.
+      </p>
+    </div>
+
+  </div>
+
+  <footer>
+    <div class="container">
+      <p class="footer-name">Sillito Sourdough</p>
+      <p class="footer-sub">Austin, TX &bull; Fresh weekly &bull; Made with love</p>
+    </div>
+  </footer>
+
+  <script>
+    const params  = new URLSearchParams(window.location.search);
+    const token   = params.get('token');
+
+    const reqSection   = document.getElementById('request-section');
+    const ordersSection= document.getElementById('orders-section');
+
+    // ── Token mode ────────────────────────────────────────────────────────────
+    if (token) {
+      reqSection.style.display    = 'none';
+      ordersSection.style.display = 'block';
+
+      fetch('/api/portal?token=' + encodeURIComponent(token))
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) {
+            ordersSection.innerHTML =
+              `<div class="portal-card"><h2>Link expired</h2>
+               <p>${data.error}. <a href="/portal.html">Request a new link</a>.</p></div>`;
+            return;
+          }
+          const { customer, orders } = data;
+
+          document.getElementById('profile-name').textContent =
+            `${customer.first_name} ${customer.last_name}`;
+          document.getElementById('profile-email').textContent = customer.email;
+
+          const rec = customer.recurring_preferences?.[0];
+          if (rec?.active) {
+            document.getElementById('recurring-badge').style.display = 'inline-block';
+          }
+
+          const opts = [];
+          if (customer.email_opt_in) opts.push('Email announcements');
+          if (customer.sms_opt_in)   opts.push('SMS updates');
+          document.getElementById('profile-opts').textContent =
+            opts.length ? 'Opted in: ' + opts.join(', ') : 'No notifications opted in';
+
+          const list = document.getElementById('order-list');
+          if (!orders.length) {
+            list.innerHTML = '<p class="empty-state">No orders yet. <a href="/">Place your first order!</a></p>';
+            return;
+          }
+
+          list.innerHTML = orders.map(order => {
+            const week   = order.weeks;
+            const status = order.status;
+            const paid   = order.payment_status === 'paid';
+            const badge  = {
+              pending:   'badge-pending',
+              confirmed: 'badge-confirmed',
+              completed: 'badge-completed',
+              cancelled: 'badge-cancelled',
+            }[status] || 'badge-pending';
+
+            return `<div class="order-card">
+              <div class="order-card-header">
+                <span class="order-week">${week?.label || 'Unknown week'}</span>
+                <span class="badge ${badge}">${status}</span>
+              </div>
+              <p class="order-detail"><strong>Loaves:</strong> ${order.loaves}</p>
+              <p class="order-detail"><strong>Ordered:</strong> ${new Date(order.created_at).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })}</p>
+              ${paid ? '<p class="order-detail"><strong>Payment:</strong> ✓ Paid (' + order.payment_method + ')</p>' : ''}
+              ${order.notes ? `<p class="order-detail"><strong>Notes:</strong> ${order.notes}</p>` : ''}
+              ${order.pickup_details ? `<div class="pickup-box"><strong>Pickup:</strong> ${order.pickup_details}</div>` : ''}
+            </div>`;
+          }).join('');
+        })
+        .catch(() => {
+          document.getElementById('order-list').innerHTML =
+            '<p class="empty-state">Error loading orders. Please try again.</p>';
+        });
+    }
+
+    // ── Request link mode ─────────────────────────────────────────────────────
+    document.getElementById('request-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = document.getElementById('req-email').value.trim();
+      const btn   = document.getElementById('req-btn');
+      btn.disabled    = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        await fetch('/api/portal', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email }),
+        });
+      } catch { /* silent */ }
+
+      document.getElementById('request-form').style.display = 'none';
+      document.getElementById('req-sent').style.display     = 'block';
+    });
+  </script>
+</body>
+</html>

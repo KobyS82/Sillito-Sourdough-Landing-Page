@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sillito Sourdough</title>
+  <title>Sillito Sourdough — Fresh Austin Bread</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
@@ -42,24 +42,28 @@
         <strong>Pickup Notice:</strong> Pickup locations and times vary week to week and will be shared by email after your order is confirmed. Locations are in the Austin area.
       </div>
 
-      <form id="order-form" action="https://formspree.io/f/xlgaywdr" method="POST">
-        <input type="hidden" name="_subject" value="New Sourdough Order - Sillito Sourdough" />
+      <form id="order-form">
 
         <div class="form-row">
           <div class="form-group">
             <label for="first-name">First Name <span class="req">*</span></label>
-            <input type="text" id="first-name" name="first_name" placeholder="First" required />
+            <input type="text" id="first-name" name="first_name" placeholder="First" required autocomplete="given-name" />
           </div>
           <div class="form-group">
             <label for="last-name">Last Name <span class="req">*</span></label>
-            <input type="text" id="last-name" name="last_name" placeholder="Last" required />
+            <input type="text" id="last-name" name="last_name" placeholder="Last" required autocomplete="family-name" />
           </div>
         </div>
 
         <div class="form-group">
           <label for="email">Email Address <span class="req">*</span></label>
-          <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
           <small>Used only to confirm your order and share pickup details.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number <span class="optional">(optional)</span></label>
+          <input type="tel" id="phone" name="phone" placeholder="(512) 555-0100" autocomplete="tel" />
         </div>
 
         <div class="form-group">
@@ -81,8 +85,23 @@
         </div>
 
         <div class="form-group">
-          <label for="notes">Notes (optional)</label>
+          <label for="notes">Notes <span class="optional">(optional)</span></label>
           <textarea id="notes" name="notes" placeholder="Any questions or special requests..." rows="3"></textarea>
+        </div>
+
+        <div class="check-group">
+          <label class="check-label">
+            <input type="checkbox" id="sms-opt-in" name="sms_opt_in" />
+            <span>Text me pickup info when my order is confirmed</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="email-opt-in" name="email_opt_in" checked />
+            <span>Email me when new bake weeks open up</span>
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="recurring" name="recurring" />
+            <span>Set this as my standing weekly order (I'll confirm each week)</span>
+          </label>
         </div>
 
         <button type="submit" class="btn btn-full" id="submit-btn">Reserve My Spot</button>
@@ -92,7 +111,36 @@
       <div id="success-msg" class="success-msg" style="display:none;">
         <h3>You're in the queue!</h3>
         <p>I'll email you soon with pickup details. Thanks for supporting Sillito Sourdough!</p>
+        <p class="portal-link-note">Want to check your order status later? <a href="/portal.html">View my orders</a></p>
       </div>
+
+      <!-- Shown only when all weeks are sold out -->
+      <div id="waitlist-section" style="display:none;">
+        <h3>Sold out this week</h3>
+        <p class="section-desc">Join the waitlist and I'll notify you when a spot opens up.</p>
+        <form id="waitlist-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="wl-email">Email <span class="req">*</span></label>
+              <input type="email" id="wl-email" placeholder="you@example.com" required />
+            </div>
+            <div class="form-group">
+              <label for="wl-loaves">Loaves</label>
+              <select id="wl-loaves">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-full">Join Waitlist</button>
+        </form>
+        <div id="waitlist-success" style="display:none;">
+          <p class="success-inline">You're on the waitlist! I'll email you when a spot opens.</p>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -114,6 +162,12 @@
         </div>
       </div>
       <p class="price-note">Pricing shared when your order is confirmed.</p>
+    </div>
+  </section>
+
+  <section class="portal-cta">
+    <div class="container">
+      <p>Already ordered? <a href="/portal.html">View your order status &rarr;</a></p>
     </div>
   </section>
 

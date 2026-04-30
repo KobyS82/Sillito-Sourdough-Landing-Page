@@ -5,350 +5,176 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin — Sillito Sourdough</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Lato', sans-serif; background: #f5f0e8; color: #2e1f14; min-height: 100vh; }
-
-    .top-bar {
-      background: #3b2418;
-      color: #c8b89a;
-      padding: 1rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .top-bar h1 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #f5f0e8; }
-    .top-bar a { color: #c8b89a; font-size: 0.85rem; text-decoration: none; }
-    .top-bar a:hover { color: #f5f0e8; }
-
-    .page { max-width: 600px; margin: 2.5rem auto; padding: 0 1.5rem 4rem; }
-
-    /* Login */
-    #login-section { background: #fff; border: 1px solid #d4c4a8; border-radius: 6px; padding: 2rem; }
-    #login-section h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 1rem; color: #3b2418; }
-
-    /* Editor */
-    #editor-section { display: none; }
-    #editor-section h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: #3b2418; margin-bottom: 0.3rem; }
-    .editor-desc { color: #6b5344; font-size: 0.9rem; margin-bottom: 1.5rem; }
-
-    /* Week rows */
-    .week-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
-    .week-row {
-      background: #fff;
-      border: 1px solid #d4c4a8;
-      border-radius: 6px;
-      padding: 1rem 1.25rem;
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      align-items: center;
-      gap: 1rem;
-    }
-    .week-row-label { font-weight: 700; font-size: 0.95rem; }
-    .week-row-label small { display: block; font-weight: 400; color: #6b5344; font-size: 0.8rem; }
-
-    .avail-control { display: flex; align-items: center; gap: 0.5rem; }
-    .avail-control button {
-      width: 28px; height: 28px;
-      border: 1px solid #d4c4a8;
-      background: #f5f0e8;
-      border-radius: 4px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: #3b2418;
-    }
-    .avail-control button:hover { background: #e8dcc8; }
-    .avail-count { font-size: 1.1rem; font-weight: 700; min-width: 1.5rem; text-align: center; }
-
-    .remove-btn {
-      background: none;
-      border: none;
-      color: #b84040;
-      cursor: pointer;
-      font-size: 1.2rem;
-      padding: 0.2rem 0.4rem;
-      border-radius: 4px;
-    }
-    .remove-btn:hover { background: #fdecea; }
-
-    /* Add week form */
-    .add-week-box {
-      background: #fff;
-      border: 1px dashed #d4c4a8;
-      border-radius: 6px;
-      padding: 1.25rem;
-      margin-bottom: 1.5rem;
-    }
-    .add-week-box h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; color: #5c3d2e; }
-    .add-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
-
-    label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem; color: #5c3d2e; letter-spacing: 0.03em; }
-    input[type="date"], input[type="text"], input[type="number"], input[type="password"] {
-      width: 100%;
-      padding: 0.6rem 0.8rem;
-      border: 1px solid #d4c4a8;
-      border-radius: 4px;
-      font-family: 'Lato', sans-serif;
-      font-size: 0.95rem;
-      background: #fff;
-      color: #2e1f14;
-    }
-    input:focus { outline: none; border-color: #7a5c4a; box-shadow: 0 0 0 3px rgba(92,61,46,0.1); }
-
-    .btn {
-      display: inline-block;
-      background: #5c3d2e;
-      color: #fff;
-      border: none;
-      border-radius: 3px;
-      padding: 0.65rem 1.25rem;
-      font-family: 'Lato', sans-serif;
-      font-weight: 700;
-      font-size: 0.88rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: background 0.15s;
-      white-space: nowrap;
-    }
-    .btn:hover { background: #3b2418; }
-    .btn-full { width: 100%; padding: 0.85rem; font-size: 0.95rem; }
-    .btn-outline {
-      background: none;
-      border: 1px solid #5c3d2e;
-      color: #5c3d2e;
-    }
-    .btn-outline:hover { background: #5c3d2e; color: #fff; }
-
-    /* Status */
-    .status {
-      margin-top: 0.75rem;
-      padding: 0.65rem 1rem;
-      border-radius: 4px;
-      font-size: 0.9rem;
-      display: none;
-    }
-    .status.ok { background: #eaf5e8; border: 1px solid #7dbb72; color: #2d6b23; display: block; }
-    .status.err { background: #fdecea; border: 1px solid #e07070; color: #8b2020; display: block; }
-
-    .empty-state { color: #6b5344; font-style: italic; font-size: 0.9rem; padding: 1rem 0; }
-    .logout-link { color: #6b5344; font-size: 0.85rem; cursor: pointer; background: none; border: none; text-decoration: underline; margin-top: 1rem; display: inline-block; }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
 </head>
 <body>
 
-<div class="top-bar">
-  <h1>Sillito Sourdough — Admin</h1>
-  <a href="/">← Back to site</a>
-</div>
-
-<div class="page">
-
-  <!-- Login -->
-  <div id="login-section">
-    <h2>Admin Login</h2>
-    <div class="form-group" style="margin-bottom:1rem;">
-      <label for="pw-input">Password</label>
-      <input type="password" id="pw-input" placeholder="Enter admin password" autocomplete="current-password" />
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="top-bar-logo">Sillito Sourdough</span>
+      <span class="top-bar-sub">Admin</span>
     </div>
-    <button class="btn btn-full" id="login-btn">Log In</button>
-    <div id="login-status" class="status"></div>
+    <div class="top-bar-right">
+      <a href="/" class="top-link">← Live site</a>
+      <button id="logout-btn" class="top-link" style="display:none;">Log out</button>
+    </div>
   </div>
 
-  <!-- Editor -->
-  <div id="editor-section">
-    <h2>Weekly Schedule</h2>
-    <p class="editor-desc">Add upcoming bake weeks and set how many loaves are available. Customers will see these in the order form.</p>
+  <!-- Login -->
+  <div id="login-section" class="login-wrap">
+    <div class="login-card">
+      <h2>Admin Login</h2>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="pw-input" placeholder="Enter admin password" autocomplete="current-password" />
+      </div>
+      <button class="btn btn-full" id="login-btn">Log In</button>
+      <div id="login-err" class="status err" style="display:none;"></div>
+    </div>
+  </div>
 
-    <div class="week-list" id="week-list">
-      <p class="empty-state">Loading...</p>
+  <!-- Dashboard -->
+  <div id="dashboard" style="display:none;">
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="orders">Orders</button>
+      <button class="tab-btn" data-tab="schedule">Schedule</button>
+      <button class="tab-btn" data-tab="customers">Customers</button>
+      <button class="tab-btn" data-tab="announce">Announce</button>
     </div>
 
-    <!-- Add week -->
-    <div class="add-week-box">
-      <h3>Add a week</h3>
-      <div class="add-row">
-        <div>
-          <label for="new-date">Pickup week of</label>
-          <input type="date" id="new-date" />
+    <!-- ── Orders tab ─────────────────────────────────────────────────── -->
+    <div id="tab-orders" class="tab-content active">
+      <div class="page-header">
+        <h2>Orders</h2>
+        <button class="btn btn-sm" id="refresh-orders-btn">Refresh</button>
+      </div>
+      <div class="stats-row" id="order-stats"></div>
+      <div class="filter-row">
+        <select id="filter-week"><option value="">All weeks</option></select>
+        <select id="filter-status">
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button class="btn btn-sm btn-outline" id="export-btn">Export CSV</button>
+      </div>
+      <div id="order-list" class="order-list"></div>
+    </div>
+
+    <!-- ── Schedule tab ───────────────────────────────────────────────── -->
+    <div id="tab-schedule" class="tab-content">
+      <div class="page-header">
+        <h2>Bake Schedule</h2>
+      </div>
+      <p class="tab-desc">Add upcoming weeks and set loaf availability. Orders auto-decrement as customers reserve spots.</p>
+      <div id="week-list" class="week-list"></div>
+      <div class="add-week-box">
+        <h3>Add a week</h3>
+        <div class="add-row">
+          <div class="form-group">
+            <label>Pickup week of</label>
+            <input type="date" id="new-date" />
+          </div>
+          <div class="form-group">
+            <label>Label (auto-filled)</label>
+            <input type="text" id="new-label" placeholder="Week of May 3" />
+          </div>
+          <div class="form-group">
+            <label>Loaves</label>
+            <input type="number" id="new-count" min="0" max="99" value="4" />
+          </div>
+          <button class="btn btn-outline" id="add-week-btn">Add</button>
         </div>
-        <div>
-          <label for="new-count">Loaves available</label>
-          <input type="number" id="new-count" min="0" max="20" value="4" />
-        </div>
-        <button class="btn btn-outline" id="add-btn">Add</button>
       </div>
     </div>
 
-    <button class="btn btn-full" id="save-btn">Save Changes</button>
-    <div id="save-status" class="status"></div>
+    <!-- ── Customers tab ──────────────────────────────────────────────── -->
+    <div id="tab-customers" class="tab-content">
+      <div class="page-header">
+        <h2>Customers</h2>
+        <button class="btn btn-sm" id="refresh-customers-btn">Refresh</button>
+      </div>
+      <div class="stats-row" id="customer-stats"></div>
+      <div class="table-wrap">
+        <table class="data-table" id="customer-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Email</th><th>Phone</th>
+              <th>Orders</th><th>Recurring</th><th>Email</th><th>SMS</th><th>Joined</th>
+            </tr>
+          </thead>
+          <tbody id="customer-tbody"></tbody>
+        </table>
+      </div>
+    </div>
 
-    <button class="logout-link" id="logout-btn">Log out</button>
+    <!-- ── Announce tab ───────────────────────────────────────────────── -->
+    <div id="tab-announce" class="tab-content">
+      <div class="page-header"><h2>Send Announcement</h2></div>
+      <p class="tab-desc">Send an email and/or SMS to all opted-in customers. Use this for weekly availability drops, pickup updates, or special batches.</p>
+      <div class="announce-form">
+        <div class="form-group">
+          <label>Channel</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="blast-type" value="email" checked> Email only</label>
+            <label class="radio-label"><input type="radio" name="blast-type" value="sms"> SMS only</label>
+            <label class="radio-label"><input type="radio" name="blast-type" value="both"> Both</label>
+          </div>
+        </div>
+        <div class="form-group" id="subject-group">
+          <label>Subject line <small>(email)</small></label>
+          <input type="text" id="blast-subject" placeholder="Fresh loaves available this week!" />
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea id="blast-message" rows="5" placeholder="Hey! New loaves are ready to reserve for the week of May 3. Head to the site to grab yours before they're gone."></textarea>
+          <small id="sms-count" style="display:none;"></small>
+        </div>
+        <div class="form-group">
+          <label>Link to include in email <small>(optional)</small></label>
+          <input type="url" id="blast-cta" placeholder="https://sillitosourdough.com" />
+        </div>
+        <div id="announce-preview" class="preview-box" style="display:none;"></div>
+        <div class="btn-row">
+          <button class="btn btn-outline" id="preview-btn">Preview</button>
+          <button class="btn" id="send-blast-btn">Send to all subscribers</button>
+        </div>
+        <div id="blast-status" class="status" style="display:none;"></div>
+      </div>
+
+      <div class="announce-form" style="margin-top:2rem;border-top:1px solid #d4c4a8;padding-top:2rem;">
+        <h3>Notify waitlist</h3>
+        <p class="tab-desc">Ping everyone on the waitlist that a spot just opened up for a specific week.</p>
+        <div class="form-group">
+          <label>Which week opened up?</label>
+          <select id="waitlist-week-select"><option value="">Select week</option></select>
+        </div>
+        <button class="btn btn-outline" id="notify-waitlist-btn">Notify Waitlist</button>
+        <div id="waitlist-status" class="status" style="display:none;"></div>
+      </div>
+    </div>
+
   </div>
 
-</div>
+  <!-- ── Pickup details modal ──────────────────────────────────────────────── -->
+  <div id="modal-backdrop" class="modal-backdrop" style="display:none;">
+    <div class="modal">
+      <h3 id="modal-title">Send Pickup Details</h3>
+      <div class="form-group">
+        <label>Pickup location & time</label>
+        <textarea id="modal-pickup" rows="3" placeholder="E.g. Saturday May 3, 10am–noon at 123 Any St (South Austin). Text if you're running late!"></textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-outline" id="modal-cancel">Cancel</button>
+        <button class="btn" id="modal-confirm">Send & Confirm Order</button>
+      </div>
+    </div>
+  </div>
 
-<script>
-  let password = '';
-  let weeks = [];
-
-  const loginSection = document.getElementById('login-section');
-  const editorSection = document.getElementById('editor-section');
-  const loginBtn = document.getElementById('login-btn');
-  const loginStatus = document.getElementById('login-status');
-  const weekList = document.getElementById('week-list');
-  const addBtn = document.getElementById('add-btn');
-  const saveBtn = document.getElementById('save-btn');
-  const saveStatus = document.getElementById('save-status');
-  const logoutBtn = document.getElementById('logout-btn');
-
-  function formatLabel(dateStr) {
-    // dateStr is YYYY-MM-DD
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    return 'Week of ' + date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-  }
-
-  function renderWeeks() {
-    weekList.innerHTML = '';
-    if (weeks.length === 0) {
-      weekList.innerHTML = '<p class="empty-state">No weeks added yet. Add one below.</p>';
-      return;
-    }
-    weeks.forEach((w, i) => {
-      const row = document.createElement('div');
-      row.className = 'week-row';
-      row.innerHTML = `
-        <div class="week-row-label">
-          ${w.label}
-          <small>${w.id}</small>
-        </div>
-        <div class="avail-control">
-          <button data-i="${i}" data-delta="-1">−</button>
-          <span class="avail-count">${w.available}</span>
-          <button data-i="${i}" data-delta="1">+</button>
-        </div>
-        <button class="remove-btn" data-remove="${i}" title="Remove">✕</button>
-      `;
-      weekList.appendChild(row);
-    });
-
-    weekList.querySelectorAll('[data-delta]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const i = parseInt(btn.dataset.i);
-        const delta = parseInt(btn.dataset.delta);
-        weeks[i].available = Math.max(0, weeks[i].available + delta);
-        renderWeeks();
-      });
-    });
-
-    weekList.querySelectorAll('[data-remove]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const i = parseInt(btn.dataset.remove);
-        weeks.splice(i, 1);
-        renderWeeks();
-      });
-    });
-  }
-
-  async function loadWeeks() {
-    try {
-      const res = await fetch('/api/availability');
-      weeks = await res.json();
-    } catch {
-      weeks = [];
-    }
-    renderWeeks();
-  }
-
-  loginBtn.addEventListener('click', async () => {
-    const pw = document.getElementById('pw-input').value.trim();
-    if (!pw) return;
-
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'Checking...';
-
-    // Verify by attempting to POST with this password
-    try {
-      const res = await fetch('/api/availability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pw, weeks: [] }),
-      });
-
-      if (res.ok) {
-        password = pw;
-        loginSection.style.display = 'none';
-        editorSection.style.display = 'block';
-        await loadWeeks();
-      } else {
-        loginStatus.className = 'status err';
-        loginStatus.textContent = 'Wrong password.';
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Log In';
-      }
-    } catch {
-      loginStatus.className = 'status err';
-      loginStatus.textContent = 'Network error — is the site deployed?';
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'Log In';
-    }
-  });
-
-  document.getElementById('pw-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') loginBtn.click();
-  });
-
-  addBtn.addEventListener('click', () => {
-    const dateVal = document.getElementById('new-date').value;
-    const countVal = parseInt(document.getElementById('new-count').value, 10);
-    if (!dateVal) { alert('Pick a date first.'); return; }
-    if (weeks.find((w) => w.id === dateVal)) { alert('That week already exists.'); return; }
-    weeks.push({ id: dateVal, label: formatLabel(dateVal), available: isNaN(countVal) ? 4 : countVal });
-    weeks.sort((a, b) => a.id.localeCompare(b.id));
-    renderWeeks();
-    document.getElementById('new-date').value = '';
-    document.getElementById('new-count').value = '4';
-  });
-
-  saveBtn.addEventListener('click', async () => {
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
-    saveStatus.className = 'status';
-
-    try {
-      const res = await fetch('/api/availability', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, weeks }),
-      });
-
-      if (res.ok) {
-        saveStatus.className = 'status ok';
-        saveStatus.textContent = 'Saved! The site is updated live.';
-      } else {
-        saveStatus.className = 'status err';
-        saveStatus.textContent = 'Error saving. Try again.';
-      }
-    } catch {
-      saveStatus.className = 'status err';
-      saveStatus.textContent = 'Network error.';
-    }
-
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save Changes';
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    password = '';
-    weeks = [];
-    editorSection.style.display = 'none';
-    loginSection.style.display = 'block';
-    document.getElementById('pw-input').value = '';
-    loginStatus.className = 'status';
-  });
-</script>
+  <script src="admin.js"></script>
 </body>
 </html>
