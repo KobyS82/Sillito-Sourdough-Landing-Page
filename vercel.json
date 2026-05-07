@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://sillitosourdough.org/$1",
+      "permanent": true
+    }
+  ]
+}
