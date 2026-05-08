@@ -20,124 +20,139 @@
   </header>
 
   <div class="availability-bar">
-    <div class="container" id="avail-bar-content">
+    <div class="container" id="avail-bar">
       <span class="avail-dot"></span>
-      <strong>Loading...</strong>
+      <strong>Loading&hellip;</strong>
     </div>
   </div>
 
   <section class="hero">
     <div class="container">
-      <p>Every week I bake a small batch of fresh sourdough right here in Austin &mdash; no preservatives, no shortcuts. Just good bread made the slow way. Reserve your spot below and I'll reach out with pickup details.</p>
-      <a href="#order" class="btn">Reserve a Loaf</a>
+      <p>Freshly baked sourdough and artisan cookies, right here in Austin &mdash; made the slow way, no shortcuts. Reserve below and I&rsquo;ll confirm your spot and pickup details by email.</p>
+      <a href="#order" class="btn">Order Now</a>
     </div>
   </section>
 
   <section id="order" class="order-section">
     <div class="container">
-      <h2>Join the Queue</h2>
-      <p class="section-desc">Fill out the form and I'll confirm your spot and share pickup info by email. No payment needed until pickup.</p>
 
-      <div class="notice">
-        <strong>Pickup Notice:</strong> Pickup locations and times vary week to week and will be shared by email after your order is confirmed. Locations are in the Austin area.
+      <!-- Step indicator -->
+      <div class="steps-indicator" id="steps-indicator">
+        <div class="step-dot active" data-step="1">
+          <div class="step-dot-num">1</div>
+          <div class="step-dot-label">Items</div>
+        </div>
+        <div class="step-sep"></div>
+        <div class="step-dot" data-step="2">
+          <div class="step-dot-num">2</div>
+          <div class="step-dot-label">Location</div>
+        </div>
+        <div class="step-sep"></div>
+        <div class="step-dot" data-step="3">
+          <div class="step-dot-num">3</div>
+          <div class="step-dot-label">Date</div>
+        </div>
+        <div class="step-sep"></div>
+        <div class="step-dot" data-step="4">
+          <div class="step-dot-num">4</div>
+          <div class="step-dot-label">Contact</div>
+        </div>
       </div>
 
-      <form id="order-form">
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="first-name">First Name <span class="req">*</span></label>
-            <input type="text" id="first-name" name="first_name" placeholder="First" required autocomplete="given-name" />
-          </div>
-          <div class="form-group">
-            <label for="last-name">Last Name <span class="req">*</span></label>
-            <input type="text" id="last-name" name="last_name" placeholder="Last" required autocomplete="family-name" />
-          </div>
+      <!-- Step 1: Choose items -->
+      <div class="step-panel active" id="step-1">
+        <h2>What would you like?</h2>
+        <p class="section-desc">Choose quantities below &mdash; at least one item to continue.</p>
+        <div id="product-cards" class="product-cards">
+          <p class="empty-state" style="padding:1.5rem;text-align:center;color:var(--text-muted);">Loading products&hellip;</p>
         </div>
-
-        <div class="form-group">
-          <label for="email">Email Address <span class="req">*</span></label>
-          <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
-          <small>Used only to confirm your order and share pickup details.</small>
+        <div class="step-nav">
+          <span></span>
+          <button class="btn" id="next-1" disabled>Choose a Location &rarr;</button>
         </div>
-
-        <div class="form-group">
-          <label for="phone">Phone Number <span class="optional">(optional)</span></label>
-          <input type="tel" id="phone" name="phone" placeholder="(512) 555-0100" autocomplete="tel" />
-        </div>
-
-        <div class="form-group">
-          <label for="week">Which week? <span class="req">*</span></label>
-          <select id="week" name="week" required>
-            <option value="" disabled selected>Loading availability...</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="loaves">How many loaves? <span class="req">*</span></label>
-          <select id="loaves" name="loaves" required>
-            <option value="" disabled selected>Select quantity</option>
-            <option value="1">1 loaf</option>
-            <option value="2">2 loaves</option>
-            <option value="3">3 loaves</option>
-            <option value="4">4 loaves (whole batch)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="notes">Notes <span class="optional">(optional)</span></label>
-          <textarea id="notes" name="notes" placeholder="Any questions or special requests..." rows="3"></textarea>
-        </div>
-
-        <div class="check-group">
-          <label class="check-label">
-            <input type="checkbox" id="sms-opt-in" name="sms_opt_in" />
-            <span>Text me pickup info when my order is confirmed</span>
-          </label>
-          <label class="check-label">
-            <input type="checkbox" id="email-opt-in" name="email_opt_in" checked />
-            <span>Email me when new bake weeks open up</span>
-          </label>
-          <label class="check-label">
-            <input type="checkbox" id="recurring" name="recurring" />
-            <span>Set this as my standing weekly order (I'll confirm each week)</span>
-          </label>
-        </div>
-
-        <button type="submit" class="btn btn-full" id="submit-btn">Reserve My Spot</button>
-        <p class="form-note">No spam. No accounts. Just bread.</p>
-      </form>
-
-      <div id="success-msg" class="success-msg" style="display:none;">
-        <h3>You're in the queue!</h3>
-        <p>I'll email you soon with pickup details. Thanks for supporting Sillito Sourdough!</p>
-        <p class="portal-link-note">Want to check your order status later? <a href="/portal.html">View my orders</a></p>
       </div>
 
-      <!-- Shown only when all weeks are sold out -->
-      <div id="waitlist-section" style="display:none;">
-        <h3>Sold out this week</h3>
-        <p class="section-desc">Join the waitlist and I'll notify you when a spot opens up.</p>
-        <form id="waitlist-form">
+      <!-- Step 2: Choose location -->
+      <div class="step-panel" id="step-2">
+        <h2>Where would you like to pick up?</h2>
+        <p class="section-desc">Pick the spot that works best for you.</p>
+        <div id="location-cards" class="location-cards">
+          <p class="empty-state" style="padding:1.5rem;text-align:center;color:var(--text-muted);">Loading locations&hellip;</p>
+        </div>
+        <div class="step-nav">
+          <button class="btn btn-outline" id="back-2">&larr; Back</button>
+          <button class="btn" id="next-2" disabled>See Available Dates &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Choose date -->
+      <div class="step-panel" id="step-3">
+        <h2>Pick a pickup date</h2>
+        <p class="section-desc" id="step3-location-name"></p>
+        <div id="slot-list" class="slot-list">
+          <p class="empty-state" style="padding:1.5rem;text-align:center;color:var(--text-muted);">Loading available dates&hellip;</p>
+        </div>
+        <div class="step-nav">
+          <button class="btn btn-outline" id="back-3">&larr; Back</button>
+          <button class="btn" id="next-3" disabled>Enter Your Info &rarr;</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Contact info -->
+      <div class="step-panel" id="step-4">
+        <h2>Your info</h2>
+        <p class="section-desc">Almost done &mdash; just need a way to reach you with pickup details.</p>
+        <div class="order-summary-box" id="order-summary"></div>
+        <form id="order-form">
           <div class="form-row">
             <div class="form-group">
-              <label for="wl-email">Email <span class="req">*</span></label>
-              <input type="email" id="wl-email" placeholder="you@example.com" required />
+              <label for="first-name">First Name <span class="req">*</span></label>
+              <input type="text" id="first-name" name="first_name" placeholder="First" required autocomplete="given-name" />
             </div>
             <div class="form-group">
-              <label for="wl-loaves">Loaves</label>
-              <select id="wl-loaves">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-              </select>
+              <label for="last-name">Last Name <span class="req">*</span></label>
+              <input type="text" id="last-name" name="last_name" placeholder="Last" required autocomplete="family-name" />
             </div>
           </div>
-          <button type="submit" class="btn btn-full">Join Waitlist</button>
+          <div class="form-group">
+            <label for="email">Email Address <span class="req">*</span></label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required autocomplete="email" />
+            <small>Used only to confirm your order and share pickup details.</small>
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone <span class="optional">(optional)</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="(512) 555-0100" autocomplete="tel" />
+          </div>
+          <div class="form-group">
+            <label for="notes">Notes <span class="optional">(optional)</span></label>
+            <textarea id="notes" name="notes" placeholder="Any questions or special requests..." rows="2"></textarea>
+          </div>
+          <div class="check-group">
+            <label class="check-label">
+              <input type="checkbox" id="sms-opt-in" name="sms_opt_in" />
+              <span>Text me pickup info when my order is confirmed</span>
+            </label>
+            <label class="check-label">
+              <input type="checkbox" id="email-opt-in" name="email_opt_in" checked />
+              <span>Email me when new items are available</span>
+            </label>
+            <label class="check-label">
+              <input type="checkbox" id="recurring" name="recurring" />
+              <span>Set this as my standing weekly order (I'll confirm each week)</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-full" id="submit-btn">Place My Order</button>
+          <p class="form-note">No spam. No accounts. Just bread (and cookies).</p>
         </form>
-        <div id="waitlist-success" style="display:none;">
-          <p class="success-inline">You're on the waitlist! I'll email you when a spot opens.</p>
+        <button class="btn btn-outline" id="back-4" style="margin-top:1rem;">&larr; Back</button>
+      </div>
+
+      <!-- Success -->
+      <div class="step-panel" id="step-success">
+        <div class="success-msg">
+          <h3>You're in the queue!</h3>
+          <p>I'll email you soon with pickup details. Thanks for supporting Sillito Sourdough!</p>
+          <p class="portal-link-note">Want to check your order status? <a href="/portal.html">View my orders &rarr;</a></p>
         </div>
       </div>
 
@@ -161,7 +176,7 @@
           <a href="https://venmo.com/koby-sillito" target="_blank" rel="noopener" class="btn btn-venmo">@Koby-Sillito</a>
         </div>
       </div>
-      <p class="price-note">Pricing shared when your order is confirmed.</p>
+      <p class="price-note">Sourdough pricing confirmed at order confirmation. Cookies: $4 each or $10 for 3.</p>
     </div>
   </section>
 

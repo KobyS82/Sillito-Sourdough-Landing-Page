@@ -40,11 +40,12 @@
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="orders">Orders</button>
       <button class="tab-btn" data-tab="schedule">Schedule</button>
+      <button class="tab-btn" data-tab="products">Products</button>
       <button class="tab-btn" data-tab="customers">Customers</button>
       <button class="tab-btn" data-tab="announce">Announce</button>
     </div>
 
-    <!-- ── Orders tab ─────────────────────────────────────────────────── -->
+    <!-- ── Orders tab ──────────────────────────────────────────────────── -->
     <div id="tab-orders" class="tab-content active">
       <div class="page-header">
         <h2>Orders</h2>
@@ -52,7 +53,7 @@
       </div>
       <div class="stats-row" id="order-stats"></div>
       <div class="filter-row">
-        <select id="filter-week"><option value="">All weeks</option></select>
+        <select id="filter-location"><option value="">All locations</option></select>
         <select id="filter-status">
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
@@ -65,34 +66,131 @@
       <div id="order-list" class="order-list"></div>
     </div>
 
-    <!-- ── Schedule tab ───────────────────────────────────────────────── -->
+    <!-- ── Schedule tab ────────────────────────────────────────────────── -->
     <div id="tab-schedule" class="tab-content">
       <div class="page-header">
-        <h2>Bake Schedule</h2>
+        <h2>Schedule</h2>
+        <button class="btn btn-sm" id="refresh-schedule-btn">Refresh</button>
       </div>
-      <p class="tab-desc">Add upcoming weeks and set loaf availability. Orders auto-decrement as customers reserve spots.</p>
-      <div id="week-list" class="week-list"></div>
-      <div class="add-week-box">
-        <h3>Add a week</h3>
-        <div class="add-row">
-          <div class="form-group">
-            <label>Pickup week of</label>
-            <input type="date" id="new-date" />
-          </div>
-          <div class="form-group">
-            <label>Label (auto-filled)</label>
-            <input type="text" id="new-label" placeholder="Week of May 3" />
-          </div>
-          <div class="form-group">
-            <label>Loaves</label>
-            <input type="number" id="new-count" min="0" max="99" value="4" />
-          </div>
-          <button class="btn btn-outline" id="add-week-btn">Add</button>
+      <p class="tab-desc">Manage pickup slots and recurring schedule templates. Add slots manually or generate from templates.</p>
+
+      <!-- Upcoming slots -->
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Upcoming Slots</h3>
         </div>
+        <div id="slot-admin-list"><p class="empty-state">Loading&hellip;</p></div>
+      </div>
+
+      <!-- Add manual slot -->
+      <div class="add-week-box" style="margin-top:1.25rem;">
+        <h3>Add a slot manually</h3>
+        <div class="slot-form-grid">
+          <div class="form-group">
+            <label>Location</label>
+            <select id="new-slot-loc"></select>
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="new-slot-date" />
+          </div>
+          <div class="form-group">
+            <label>Start time</label>
+            <input type="time" id="new-slot-start" />
+          </div>
+          <div class="form-group">
+            <label>End time</label>
+            <input type="time" id="new-slot-end" />
+          </div>
+        </div>
+        <p style="font-size:0.83rem;font-weight:700;color:var(--brown);margin-bottom:0.5rem;">Capacity per product <small style="font-weight:400;color:var(--muted);">(leave blank = made to order)</small></p>
+        <div id="new-slot-caps" class="cap-rows"></div>
+        <button class="btn btn-outline" id="add-slot-btn">Add Slot</button>
+        <div id="add-slot-status" class="status" style="display:none;"></div>
+      </div>
+
+      <!-- Schedule templates -->
+      <div class="section-card" style="margin-top:1.25rem;">
+        <div class="section-header">
+          <h3>Schedule Templates</h3>
+          <span class="section-note">Recurring weekly patterns</span>
+        </div>
+        <div id="template-list"><p class="empty-state">No templates yet.</p></div>
+        <div class="add-week-box" style="margin-top:1rem;">
+          <h3>Add a template</h3>
+          <div class="slot-form-grid">
+            <div class="form-group">
+              <label>Location</label>
+              <select id="tmpl-loc"></select>
+            </div>
+            <div class="form-group">
+              <label>Day of week</label>
+              <select id="tmpl-dow">
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Start time</label>
+              <input type="time" id="tmpl-start" />
+            </div>
+            <div class="form-group">
+              <label>End time</label>
+              <input type="time" id="tmpl-end" />
+            </div>
+            <div class="form-group">
+              <label>Valid from <small>(optional)</small></label>
+              <input type="date" id="tmpl-from" />
+            </div>
+            <div class="form-group">
+              <label>Valid until <small>(optional)</small></label>
+              <input type="date" id="tmpl-until" />
+            </div>
+          </div>
+          <button class="btn btn-outline" id="add-tmpl-btn">Add Template</button>
+          <div id="add-tmpl-status" class="status" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Generate slots -->
+      <div class="section-card" style="margin-top:1.25rem;">
+        <div class="section-header">
+          <h3>Generate Slots from Templates</h3>
+        </div>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">Creates pickup slots for every active template within the date range. Skips dates that already have a slot.</p>
+        <div class="slot-form-grid">
+          <div class="form-group">
+            <label>From date</label>
+            <input type="date" id="gen-from" />
+          </div>
+          <div class="form-group">
+            <label>To date</label>
+            <input type="date" id="gen-to" />
+          </div>
+        </div>
+        <p style="font-size:0.83rem;font-weight:700;color:var(--brown);margin-bottom:0.5rem;">Default capacity per product <small style="font-weight:400;color:var(--muted);">(leave blank = made to order)</small></p>
+        <div id="gen-caps" class="cap-rows"></div>
+        <button class="btn" id="generate-btn">Generate Slots</button>
+        <div id="gen-status" class="status" style="display:none;"></div>
       </div>
     </div>
 
-    <!-- ── Customers tab ──────────────────────────────────────────────── -->
+    <!-- ── Products tab ────────────────────────────────────────────────── -->
+    <div id="tab-products" class="tab-content">
+      <div class="page-header">
+        <h2>Products</h2>
+        <button class="btn btn-sm" id="refresh-products-btn">Refresh</button>
+      </div>
+      <p class="tab-desc">Manage products, pricing, and availability. Cookies pricing: <strong>$10 for 3</strong> is the deal (deal_price_cents=1000, deal_qty=3), <strong>$4 each</strong> otherwise.</p>
+      <div id="product-admin-list"></div>
+    </div>
+
+    <!-- ── Customers tab ───────────────────────────────────────────────── -->
     <div id="tab-customers" class="tab-content">
       <div class="page-header">
         <h2>Customers</h2>
@@ -112,10 +210,10 @@
       </div>
     </div>
 
-    <!-- ── Announce tab ───────────────────────────────────────────────── -->
+    <!-- ── Announce tab ────────────────────────────────────────────────── -->
     <div id="tab-announce" class="tab-content">
       <div class="page-header"><h2>Send Announcement</h2></div>
-      <p class="tab-desc">Send an email and/or SMS to all opted-in customers. Use this for weekly availability drops, pickup updates, or special batches.</p>
+      <p class="tab-desc">Send an email and/or SMS to all opted-in customers.</p>
       <div class="announce-form">
         <div class="form-group">
           <label>Channel</label>
@@ -131,7 +229,7 @@
         </div>
         <div class="form-group">
           <label>Message</label>
-          <textarea id="blast-message" rows="5" placeholder="Hey! New loaves are ready to reserve for the week of May 3. Head to the site to grab yours before they're gone."></textarea>
+          <textarea id="blast-message" rows="5" placeholder="Hey! New items are ready to reserve..."></textarea>
           <small id="sms-count" style="display:none;"></small>
         </div>
         <div class="form-group">
@@ -145,17 +243,6 @@
         </div>
         <div id="blast-status" class="status" style="display:none;"></div>
       </div>
-
-      <div class="announce-form" style="margin-top:2rem;border-top:1px solid #d4c4a8;padding-top:2rem;">
-        <h3>Notify waitlist</h3>
-        <p class="tab-desc">Ping everyone on the waitlist that a spot just opened up for a specific week.</p>
-        <div class="form-group">
-          <label>Which week opened up?</label>
-          <select id="waitlist-week-select"><option value="">Select week</option></select>
-        </div>
-        <button class="btn btn-outline" id="notify-waitlist-btn">Notify Waitlist</button>
-        <div id="waitlist-status" class="status" style="display:none;"></div>
-      </div>
     </div>
 
   </div>
@@ -165,12 +252,12 @@
     <div class="modal">
       <h3 id="modal-title">Send Pickup Details</h3>
       <div class="form-group">
-        <label>Pickup location & time</label>
-        <textarea id="modal-pickup" rows="3" placeholder="E.g. Saturday May 3, 10am–noon at 123 Any St (South Austin). Text if you're running late!"></textarea>
+        <label>Pickup location &amp; time</label>
+        <textarea id="modal-pickup" rows="3" placeholder="E.g. Wednesday May 14, 5–7 PM at Rabadi's BJJ. Text if running late!"></textarea>
       </div>
       <div class="btn-row">
         <button class="btn btn-outline" id="modal-cancel">Cancel</button>
-        <button class="btn" id="modal-confirm">Send & Confirm Order</button>
+        <button class="btn" id="modal-confirm">Send &amp; Confirm Order</button>
       </div>
     </div>
   </div>
