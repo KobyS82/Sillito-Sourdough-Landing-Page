@@ -1,0 +1,5 @@
+# Vercel publishes every deployed file at sillitosourdough.org. Keep docs and SQL off the site.
+# (api/ and lib/ must stay: they are the serverless functions.)
+RUNBOOK.md
+AGENTS.md
+*.sql
