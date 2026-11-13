@@ -2,7 +2,9 @@ const { select, update } = require('../lib/db');
 const { sendEmail, templates } = require('../lib/email');
 const { sendSMS } = require('../lib/sms');
 
-const ADMIN_PW = process.env.ADMIN_PASSWORD;
+// If ADMIN_PASSWORD is missing in Vercel, nothing a request can send equals this Symbol, so every
+// admin check fails closed. (Plain `undefined` would MATCH a request that sends no password.)
+const ADMIN_PW = process.env.ADMIN_PASSWORD || Symbol('ADMIN_PASSWORD is not set');
 const SITE_URL = process.env.SITE_URL || '';
 
 function cors(res) {

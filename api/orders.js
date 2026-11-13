@@ -2,7 +2,9 @@ const { select, insert, upsert, update } = require('../lib/db');
 const { sendEmail, templates } = require('../lib/email');
 const { sendSMS } = require('../lib/sms');
 
-const ADMIN_PW    = process.env.ADMIN_PASSWORD;
+// If ADMIN_PASSWORD is missing in Vercel, nothing a request can send equals this Symbol, so every
+// admin check fails closed. (Plain `undefined` would MATCH a request that sends no password.)
+const ADMIN_PW = process.env.ADMIN_PASSWORD || Symbol('ADMIN_PASSWORD is not set');
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 function cors(res) {
@@ -10,6 +12,9 @@ function cors(res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
+
+const UUID    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_QTY = 100;   // most of one product a single order may ask for
 
 function calcItemPrice(qty, product) {
   if (!product.price_each_cents) return 0;
@@ -137,8 +142,17 @@ async function placeOrder(body, res) {
   const { first_name, last_name, email, phone, slot_id, items,
           notes, sms_opt_in, email_opt_in, recurring } = body;
 
-  if (!first_name || !last_name || !email || !slot_id || !items?.length) {
+  if (!first_name || !last_name || !email || !slot_id || !Array.isArray(items) || !items.length) {
     return res.status(400).json({ error: 'Missing required fields' });
+  }
+  // slot_id goes into a database filter and quantity into arithmetic: accept only the real shapes.
+  if (!UUID.test(String(slot_id))) return res.status(400).json({ error: 'Invalid pickup slot' });
+  for (const item of items) {
+    const qty = Number(item?.quantity);
+    if (!item || typeof item.product_id !== 'string' || !Number.isInteger(qty) || qty < 1 || qty > MAX_QTY) {
+      return res.status(400).json({ error: 'Please check the quantities in your order.' });
+    }
+    item.quantity = qty;
   }
 
   try {
@@ -218,8 +232,10 @@ async function placeOrder(body, res) {
       }, 'customer_id');
     }
 
-    // Notifications (fire-and-forget)
-    Promise.all([
+    // Notifications. AWAITED on purpose: Vercel freezes the function as soon as the response is
+    // sent, so an un-awaited send can be cut off and the email never leaves. sendEmail/sendSMS
+    // time out on their own, and allSettled means a failed notification never fails the order.
+    const sent = await Promise.allSettled([
       sendEmail({
         to: customer.email,
         subject: `You're in the queue! — Sillito Sourdough`,
@@ -234,7 +250,10 @@ async function placeOrder(body, res) {
         to: customer.phone,
         message: `You're in the queue at Sillito Sourdough! I'll text pickup details soon.`,
       }),
-    ]).catch(e => console.error('[orders] notification error:', e.message));
+    ]);
+    for (const r of sent) {
+      if (r.status === 'rejected') console.error('[orders] notification error:', r.reason?.message || r.reason);
+    }
 
     return res.status(200).json({ ok: true, orderId: order.id });
   } catch (e) {

@@ -3,3 +3,4 @@
 RUNBOOK.md
 AGENTS.md
 *.sql
+tests/

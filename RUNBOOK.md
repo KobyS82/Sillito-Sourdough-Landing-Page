@@ -74,13 +74,19 @@ git push Sillito-Sourdough-Landing-Page master
 | Text-message wording | `api/orders.js:73, 105, 123, 235` (no effect until Twilio is set up) | code |
 
 ## 5. Things that break and how to fix them
-**Order emails not arriving.** The code returns success to the customer even if the email fails (notifications are fire-and-forget, `api/orders.js:221-237`), so a "successful" order does not prove an email went out.
+**Order emails not arriving.** Until 2026-11-13 the order code answered the customer BEFORE the emails had finished sending (un-awaited "fire-and-forget"). Vercel freezes a function the moment it answers, so those sends could be cut off and never leave: the most likely reason the queue email and the admin "New order" email were unreliable while the admin-page emails (which were awaited) worked. **Fixed 2026-11-13:** `placeOrder` in `api/orders.js` now waits for the notifications (`Promise.allSettled`), and `sendEmail` / `sendSMS` give up after 6 seconds and never throw, so a broken email service still cannot fail an order. A "successful" order therefore still does not PROVE an email went out; if they are missing, check in order:
 1. Is `RESEND_API_KEY` set in Vercel? If not, emails are silently skipped.
 2. Resend dashboard > Logs: look for the send attempt and its error. Vercel dashboard > the deployment > Logs / Functions: search for `[Email] Resend error:` or `RESEND_API_KEY not set`.
 3. Resend dashboard > Domains: `sillitosourdough.org` must be **Verified** *in the same Resend account that owns the key in Vercel*. A key from another Resend account (e.g. the chore app's separate key) will fail with "domain not verified".
 4. The sender must end in `@sillitosourdough.org`. If Vercel has an `EMAIL_FROM` env var, check it is not a `.com` address. `.com` is not a real domain.
 5. Check the customer's spam folder.
 **OUTAGE FOUND 2026-10-28: the Supabase project (ref `zqbhcnzofpsxvaffazxa`) was paused.** Its hostname no longer resolved in DNS, and every `/api/*` call returned `500 {"error":"fetch failed"}`, while the homepage still loaded fine. So the site looked up but nobody could order. Fix: supabase.com dashboard > the project > **Restore project** (free-tier paused projects can be restored for a limited time, about 90 days; after that the data is gone). Then check `curl.exe -s https://www.sillitosourdough.org/api/products` returns JSON. The PC's daily checkup (`C:\Users\kobys\pc-inventory\scripts\checkup.ps1`, 07:30) now probes that URL. The probe flags the next outage, and its daily database read should count as activity and keep the project from pausing. If the checkup flags it, this is the first thing to check.
+
+**Changed 2026-11-13 (same commit as the email fix):**
+- `tests/order_test.js`: offline test of the order path (fake database, fake email service). Run `node tests/order_test.js` before pushing a change to orders or email code. It is kept off the public site by `.vercelignore`.
+- Admin password fails closed: if `ADMIN_PASSWORD` were ever missing in Vercel, every admin call now gets 401. Before, a request with no password would have matched the missing value and been let in. (It IS set today: the live API answered 401 to a no-password request on 2026-11-13.)
+- Orders are checked before anything is saved: the pickup slot must look like a real id and each quantity must be a whole number from 1 to 100 (`MAX_QTY` in `api/orders.js`). A negative quantity used to be accepted.
+- Text a customer types (name, phone, notes) is HTML-escaped in every email (`esc` in `lib/email.js`).
 
 **OPEN ITEM (as of 2026-10-28): a real test order has never been placed to confirm emails arrive end-to-end.** The `.com` to `.org` sender fix (commit `a93d200`, 2026-09-17) is deployed, but nobody has verified an email actually lands. Do this: place a real order on the live site with Koby's own email (pick a slot, tiny quantity), confirm the "You're in the queue" email arrives, then in admin Confirm the order and check the second email, then Cancel it (this restores capacity). Check `ADMIN_EMAIL` is set so the new-order alert is tested too.
 
