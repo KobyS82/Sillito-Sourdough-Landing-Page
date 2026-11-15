@@ -2,7 +2,10 @@ const crypto = require('crypto');
 const { select, upsert } = require('../lib/db');
 const { sendEmail, templates } = require('../lib/email');
 
-const SECRET   = () => process.env.PORTAL_SECRET || 'change-me-please';
+// No fallback on purpose: with a secret that is written in this file, anyone could sign their own
+// link for any customer's email. If PORTAL_SECRET is missing in Vercel the portal stops working
+// (links are not sent and none verify) until it is set again.
+const SECRET   = () => process.env.PORTAL_SECRET;
 const SITE_URL = () => process.env.SITE_URL || '';
 
 function cors(res) {
@@ -12,6 +15,7 @@ function cors(res) {
 }
 
 function makeToken(email) {
+  if (!SECRET()) throw new Error('PORTAL_SECRET is not set');
   const exp  = Date.now() + 24 * 3600 * 1000;
   const data = `${email}|${exp}`;
   const sig  = crypto.createHmac('sha256', SECRET()).update(data).digest('hex');
@@ -20,14 +24,17 @@ function makeToken(email) {
 
 function verifyToken(token) {
   try {
-    const decoded = Buffer.from(token, 'base64url').toString();
+    if (!SECRET()) return null;
+    const decoded = Buffer.from(String(token), 'base64url').toString();
     const lastPipe = decoded.lastIndexOf('|');
     const data     = decoded.slice(0, lastPipe);
     const sig      = decoded.slice(lastPipe + 1);
     const expected = crypto.createHmac('sha256', SECRET()).update(data).digest('hex');
     if (!crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex'))) return null;
-    const [email, exp] = data.split('|');
-    if (Date.now() > parseInt(exp)) return null;
+    const cut   = data.lastIndexOf('|');
+    const email = data.slice(0, cut);
+    const exp   = data.slice(cut + 1);
+    if (cut < 1 || !(Date.now() <= parseInt(exp))) return null;
     return email;
   } catch {
     return null;
@@ -46,10 +53,25 @@ module.exports = async (req, res) => {
     if (!email) return res.status(401).json({ error: 'Invalid or expired link' });
 
     try {
-      const [customer] = await select('customers', `?email=eq.${encodeURIComponent(email)}&select=*,recurring_preferences(loaves,active)`);
-      if (!customer) return res.status(404).json({ error: 'No account found for that email' });
+      // Named columns, not *: the customers table also holds the baker's private notes about a
+      // customer, and the orders table internal ids. The page gets only what it shows.
+      const [found] = await select('customers', `?email=eq.${encodeURIComponent(email)}` +
+        '&select=id,first_name,last_name,email,email_opt_in,sms_opt_in,recurring_preferences(loaves,active)');
+      if (!found) return res.status(404).json({ error: 'No account found for that email' });
+      const { id: customerId, ...customer } = found;
 
-      const orders = await select('orders', `?customer_id=eq.${customer.id}&select=*,weeks(id,label)&order=created_at.desc`);
+      // weeks = the old weekly orders; pickup_slots + order_items = orders placed since the slot system.
+      let orders;
+      try {
+        orders = await select('orders', `?customer_id=eq.${customerId}` +
+          '&select=status,payment_status,payment_method,loaves,notes,pickup_details,total_price_cents,created_at,' +
+          'weeks(label),pickup_slots(slot_date,window_start,window_end,locations(name)),order_items(quantity,products(name))' +
+          '&order=created_at.desc');
+      } catch (e) {
+        // A column named above no longer exists. Show the orders without the extras, not an error page.
+        console.error('[portal] detailed order query failed, using the plain one:', e.message);
+        orders = await select('orders', `?customer_id=eq.${customerId}&select=*,weeks(label)&order=created_at.desc`);
+      }
       return res.status(200).json({ customer, orders: orders || [] });
     } catch (e) {
       return res.status(500).json({ error: e.message });
@@ -59,7 +81,9 @@ module.exports = async (req, res) => {
   // POST /api/portal  →  send magic link to email
   if (req.method === 'POST') {
     const { email, joinWaitlist, loaves } = req.body || {};
-    if (!email) return res.status(400).json({ error: 'Email required' });
+    if (!email || typeof email !== 'string' || email.length > 200) {
+      return res.status(400).json({ error: 'Email required' });
+    }
 
     try {
       const [customer] = await select('customers', `?email=eq.${encodeURIComponent(email.toLowerCase().trim())}`);

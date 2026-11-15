@@ -29,7 +29,7 @@ Tech: plain static HTML/CSS/JS pages plus Node serverless functions in `/api`, h
 | `EMAIL_FROM` | `lib/email.js:2` | optional; overrides the default sender `Sillito Sourdough <hello@sillitosourdough.org>`. Must be an @sillitosourdough.org address. |
 | `ADMIN_EMAIL` | `api/orders.js:6` | optional; gets a "New order" email. If unset, Koby gets no new-order email. |
 | `SITE_URL` | `api/portal.js:6`, `api/notify.js:6` | base URL for magic links and blast buttons. If unset, magic links are broken (start with `/portal.html`). Should be `https://www.sillitosourdough.org`. Whether it is set in Vercel: unverified. |
-| `PORTAL_SECRET` | `api/portal.js:5` | signs magic links; falls back to the public default `'change-me-please'` if unset. **Verified set in Vercel 2026-10-28** (a token signed with the default was rejected with 401). Never delete it: without it anyone could forge a link to any customer's orders. |
+| `PORTAL_SECRET` | `SECRET` in `api/portal.js` | signs magic links. **No fallback since 2026-11-15:** if it is missing, no link is sent and none verifies (the portal stops; ordering is unaffected). Before that the code fell back to a placeholder written in the file. **Verified set in Vercel 2026-10-28 and 2026-11-15** (a token signed with the old placeholder was rejected with 401). Never delete it. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | `lib/sms.js:1-3` | SMS; not configured, SMS silently skipped |
 The local `.env` (git-ignored) only matters for running locally. It has `ADMIN_PASSWORD`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`; it has no Resend key. Do not rewrite it with PowerShell `Set-Content -Encoding utf8` (adds a BOM that breaks parsing); edit it in an editor.
 
@@ -87,6 +87,14 @@ git push Sillito-Sourdough-Landing-Page master
 - Admin password fails closed: if `ADMIN_PASSWORD` were ever missing in Vercel, every admin call now gets 401. Before, a request with no password would have matched the missing value and been let in. (It IS set today: the live API answered 401 to a no-password request on 2026-11-13.)
 - Orders are checked before anything is saved: the pickup slot must look like a real id and each quantity must be a whole number from 1 to 100 (`MAX_QTY` in `api/orders.js`). A negative quantity used to be accepted.
 - Text a customer types (name, phone, notes) is HTML-escaped in every email (`esc` in `lib/email.js`).
+
+**Changed 2026-11-15 (code review of the whole site):**
+- **Admin page ran customer-typed text as HTML.** `admin.js` put the name, email, phone and notes from an order straight into the page. Someone could have placed an order with HTML/script in the name field and it would have run in the admin browser, where the admin password is held. Every such field now goes through `esc()` in `admin.js`; same in `portal.html`. No sign it was ever abused (not checkable from here; if in doubt, change `ADMIN_PASSWORD` in Vercel).
+- **Public slot list:** `location_id` in `/api/slots?location_id=...` went into the database query unchecked. It now must look like an id (letters, digits, `-`, `_`).
+- **"View my orders" page** showed "Loaves: null / Unknown week" for every order placed since the pickup-slot system. It now shows the items, pickup place and time, and total. The portal API returns named columns only (it used to return the whole customer row, including the private admin `notes` field).
+- **Announcements** (`api/notify.js`): an email or text that failed is no longer counted as sent, and a waitlist person whose email failed stays "not notified".
+- **Order form:** names, email, phone and notes must be text and under a length limit (`MAX_LEN` in `api/orders.js`), and the email must look like one.
+- `tests/order_test.js` covers all of the above (still offline).
 
 **OPEN ITEM (as of 2026-10-28): a real test order has never been placed to confirm emails arrive end-to-end.** The `.com` to `.org` sender fix (commit `a93d200`, 2026-09-17) is deployed, but nobody has verified an email actually lands. Do this: place a real order on the live site with Koby's own email (pick a slot, tiny quantity), confirm the "You're in the queue" email arrives, then in admin Confirm the order and check the second email, then Cancel it (this restores capacity). Check `ADMIN_EMAIL` is set so the new-order alert is tested too.
 

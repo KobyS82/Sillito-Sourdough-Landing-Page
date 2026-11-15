@@ -35,11 +35,13 @@ module.exports = async (req, res) => {
       if (week && waitlistEntries?.length) {
         for (const entry of waitlistEntries) {
           try {
-            await sendEmail({
+            const mailed = await sendEmail({
               to: entry.customers.email,
               subject: 'A spot just opened — Sillito Sourdough',
               html: templates.waitlistNotification(entry.customers, week, SITE_URL || ctaUrl),
             });
+            // Not sent -> leave them on the waitlist as not notified, so the next try reaches them.
+            if (!mailed) throw new Error('email was not sent');
             if (entry.customers.sms_opt_in && entry.customers.phone) {
               await sendSMS({
                 to: entry.customers.phone,
@@ -64,11 +66,12 @@ module.exports = async (req, res) => {
     if (type === 'email' || type === 'both') {
       for (const c of emailList) {
         try {
-          await sendEmail({
+          const mailed = await sendEmail({
             to: c.email,
             subject,
             html: templates.blast(c, subject, message, ctaUrl || SITE_URL),
           });
+          if (!mailed) throw new Error('not sent (see the Vercel log)');
           results.emailsSent++;
         } catch (e) {
           results.errors.push(`Email ${c.email}: ${e.message}`);
@@ -79,7 +82,8 @@ module.exports = async (req, res) => {
     if (type === 'sms' || type === 'both') {
       for (const c of smsList) {
         try {
-          await sendSMS({ to: c.phone, message });
+          const texted = await sendSMS({ to: c.phone, message });
+          if (!texted) throw new Error('not sent (see the Vercel log)');
           results.smsSent++;
         } catch (e) {
           results.errors.push(`SMS ${c.phone}: ${e.message}`);

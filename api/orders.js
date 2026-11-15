@@ -15,6 +15,21 @@ function cors(res) {
 
 const UUID    = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_QTY = 100;   // most of one product a single order may ask for
+// Longest text an order form may send per field. Anything longer is a mistake or abuse.
+const MAX_LEN = { first_name: 80, last_name: 80, email: 200, phone: 40, notes: 1000 };
+
+function badText(body) {
+  for (const [field, max] of Object.entries(MAX_LEN)) {
+    const v = body[field];
+    if (v === undefined || v === null || v === '') continue;
+    if (typeof v !== 'string') return 'Please check your details and try again.';
+    if (v.length > max) return `That ${field.replace('_', ' ')} is too long (max ${max} characters).`;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email || '').trim())) {
+    return 'Please enter a valid email address.';
+  }
+  return null;
+}
 
 function calcItemPrice(qty, product) {
   if (!product.price_each_cents) return 0;
@@ -145,6 +160,8 @@ async function placeOrder(body, res) {
   if (!first_name || !last_name || !email || !slot_id || !Array.isArray(items) || !items.length) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  const textProblem = badText(body);
+  if (textProblem) return res.status(400).json({ error: textProblem });
   // slot_id goes into a database filter and quantity into arithmetic: accept only the real shapes.
   if (!UUID.test(String(slot_id))) return res.status(400).json({ error: 'Invalid pickup slot' });
   for (const item of items) {

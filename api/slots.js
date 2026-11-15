@@ -22,6 +22,11 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const { location_id, password: pw } = req.query || {};
     const isAdmin = pw === ADMIN_PW;
+    // location_id is typed by the public and goes into the database query. Without this check
+    // a crafted value could add its own query parts (for example pull customer rows along).
+    if (location_id !== undefined && !/^[A-Za-z0-9_-]{1,64}$/.test(String(location_id))) {
+      return res.status(400).json({ error: 'Invalid location' });
+    }
     try {
       let filter = '?select=*,slot_products(*,products(*)),locations(*)&cancelled=eq.false&order=slot_date.asc,window_start.asc';
       if (!isAdmin) filter += `&slot_date=gte.${bufferDate()}`;

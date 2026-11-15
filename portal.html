@@ -118,6 +118,33 @@
     const params  = new URLSearchParams(window.location.search);
     const token   = params.get('token');
 
+    // Text from the server goes through esc() before it is put into the page as HTML.
+    const esc = v => String(v ?? '').replace(/[&<>"']/g,
+      ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+    function fmtTime(t) {
+      if (!t) return '';
+      const [h, m] = t.split(':').map(Number);
+      return `${h % 12 || 12}${m ? ':' + String(m).padStart(2, '0') : ''} ${h >= 12 ? 'PM' : 'AM'}`;
+    }
+    // Orders placed since the pickup-slot system have a slot and items; older ones have a week and loaves.
+    function orderWhen(order) {
+      const s = order.pickup_slots;
+      if (s && s.slot_date) {
+        const day = new Date(s.slot_date + 'T12:00:00')
+          .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        return `${s.locations?.name ? s.locations.name + ' — ' : ''}${day}, ${fmtTime(s.window_start)}–${fmtTime(s.window_end)}`;
+      }
+      return order.weeks?.label || 'Your order';
+    }
+    function orderWhat(order) {
+      if (order.order_items?.length) {
+        return order.order_items.map(i => `${i.quantity}× ${i.products?.name || 'item'}`).join(', ');
+      }
+      if (order.loaves) return `${order.loaves} ${order.loaves === 1 ? 'loaf' : 'loaves'}`;
+      return '';
+    }
+
     const reqSection   = document.getElementById('request-section');
     const ordersSection= document.getElementById('orders-section');
 
@@ -132,7 +159,7 @@
           if (data.error) {
             ordersSection.innerHTML =
               `<div class="portal-card"><h2>Link expired</h2>
-               <p>${data.error}. <a href="/portal.html">Request a new link</a>.</p></div>`;
+               <p>${esc(data.error)}. <a href="/portal.html">Request a new link</a>.</p></div>`;
             return;
           }
           const { customer, orders } = data;
@@ -159,8 +186,9 @@
           }
 
           list.innerHTML = orders.map(order => {
-            const week   = order.weeks;
             const status = order.status;
+            const what   = orderWhat(order);
+            const total  = order.total_price_cents ? '$' + (order.total_price_cents / 100).toFixed(2) : '';
             const paid   = order.payment_status === 'paid';
             const badge  = {
               pending:   'badge-pending',
@@ -171,14 +199,15 @@
 
             return `<div class="order-card">
               <div class="order-card-header">
-                <span class="order-week">${week?.label || 'Unknown week'}</span>
-                <span class="badge ${badge}">${status}</span>
+                <span class="order-week">${esc(orderWhen(order))}</span>
+                <span class="badge ${badge}">${esc(status)}</span>
               </div>
-              <p class="order-detail"><strong>Loaves:</strong> ${order.loaves}</p>
+              ${what ? `<p class="order-detail"><strong>Order:</strong> ${esc(what)}</p>` : ''}
+              ${total ? `<p class="order-detail"><strong>Total:</strong> ${total} (cash or Venmo at pickup)</p>` : ''}
               <p class="order-detail"><strong>Ordered:</strong> ${new Date(order.created_at).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })}</p>
-              ${paid ? '<p class="order-detail"><strong>Payment:</strong> ✓ Paid (' + order.payment_method + ')</p>' : ''}
-              ${order.notes ? `<p class="order-detail"><strong>Notes:</strong> ${order.notes}</p>` : ''}
-              ${order.pickup_details ? `<div class="pickup-box"><strong>Pickup:</strong> ${order.pickup_details}</div>` : ''}
+              ${paid ? '<p class="order-detail"><strong>Payment:</strong> ✓ Paid (' + esc(order.payment_method) + ')</p>' : ''}
+              ${order.notes ? `<p class="order-detail"><strong>Notes:</strong> ${esc(order.notes)}</p>` : ''}
+              ${order.pickup_details ? `<div class="pickup-box"><strong>Pickup:</strong> ${esc(order.pickup_details)}</div>` : ''}
             </div>`;
           }).join('');
         })

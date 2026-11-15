@@ -70,6 +70,13 @@ async function loadAll() {
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
+// Anything a customer typed (name, email, phone, notes) must go through esc() before it is put
+// into the page. Without it, an order with HTML in the name would run as code on this admin page.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g,
+    ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function fmtDate(iso) {
@@ -93,15 +100,15 @@ function fmtTime(t) {
 function getOrderPickupLabel(order) {
   const slot = order.pickup_slots;
   if (slot) {
-    const loc  = slot.locations?.name || slot.location_id || '';
+    const loc  = esc(slot.locations?.name || slot.location_id || '');
     return `${loc} &mdash; ${fmtSlotDate(slot.slot_date)}, ${fmtTime(slot.window_start)}&ndash;${fmtTime(slot.window_end)}`;
   }
-  return order.weeks?.label || order.week_id || '&mdash;';
+  return esc(order.weeks?.label || order.week_id || '') || '&mdash;';
 }
 
 function getOrderItemsLabel(order) {
   if (order.order_items?.length) {
-    return order.order_items.map(i => `${i.quantity}&times; ${i.products?.name || i.product_id}`).join(', ');
+    return order.order_items.map(i => `${esc(i.quantity)}&times; ${esc(i.products?.name || i.product_id)}`).join(', ');
   }
   if (order.loaves) return `${order.loaves} loaf${order.loaves !== 1 ? 'ves' : ''}`;
   return '&mdash;';
@@ -502,8 +509,8 @@ function renderOrders() {
     <div class="order-card" id="order-${order.id}">
       <div class="order-card-top">
         <div>
-          <div class="order-name">${c.first_name || ''} ${c.last_name || ''}</div>
-          <div class="order-meta">${c.email || ''}${c.phone ? ' &bull; ' + c.phone : ''}</div>
+          <div class="order-name">${esc(c.first_name)} ${esc(c.last_name)}</div>
+          <div class="order-meta">${esc(c.email)}${c.phone ? ' &bull; ' + esc(c.phone) : ''}</div>
         </div>
         <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
           ${statusEl(order.status)}
@@ -517,8 +524,8 @@ function renderOrders() {
         ${c.sms_opt_in ? '<span class="order-pill" style="color:#047857">SMS ✓</span>' : ''}
         ${order.order_items?.some ? '' : ''}
       </div>
-      ${order.notes ? `<div class="order-notes">Notes: ${order.notes}</div>` : ''}
-      ${order.pickup_details ? `<div class="pickup-info">Pickup: ${order.pickup_details}</div>` : ''}
+      ${order.notes ? `<div class="order-notes">Notes: ${esc(order.notes)}</div>` : ''}
+      ${order.pickup_details ? `<div class="pickup-info">Pickup: ${esc(order.pickup_details)}</div>` : ''}
       <div class="order-actions">
         ${order.status === 'pending' ? `
           <button class="btn btn-sm btn-green" onclick="openModal('${order.id}','confirm')">Confirm + Send Pickup</button>
@@ -584,7 +591,7 @@ function openModal(orderId, action) {
     <h3>${title}</h3>
     <div class="form-group">
       <label>Pickup location &amp; time</label>
-      <textarea id="modal-pickup" rows="3" placeholder="E.g. Wednesday May 14, 5–7 PM at Rabadi's BJJ. Text if running late!">${order?.pickup_details || ''}</textarea>
+      <textarea id="modal-pickup" rows="3" placeholder="E.g. Wednesday May 14, 5–7 PM at Rabadi's BJJ. Text if running late!">${esc(order?.pickup_details)}</textarea>
     </div>
     <div class="btn-row">
       <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
@@ -669,9 +676,9 @@ function renderCustomers() {
     const orderCount = c.orders?.filter(o => o.status !== 'cancelled').length || 0;
     const rec        = c.recurring_preferences?.find(r => r.active);
     return `<tr>
-      <td><strong>${c.first_name} ${c.last_name}</strong></td>
-      <td class="email-cell">${c.email}</td>
-      <td class="email-cell">${c.phone || '—'}</td>
+      <td><strong>${esc(c.first_name)} ${esc(c.last_name)}</strong></td>
+      <td class="email-cell">${esc(c.email)}</td>
+      <td class="email-cell">${esc(c.phone) || '—'}</td>
       <td>${orderCount} order${orderCount !== 1 ? 's' : ''}</td>
       <td>${rec ? 'Yes' : '—'}</td>
       <td>${c.email_opt_in ? '✓' : '—'}</td>
