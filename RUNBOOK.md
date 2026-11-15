@@ -24,13 +24,13 @@ Tech: plain static HTML/CSS/JS pages plus Node serverless functions in `/api`, h
 | Name | Used by | Notes |
 |---|---|---|
 | `ADMIN_PASSWORD` | every `api/*.js` | admin login. **Verified set in Vercel 2026-10-28** (`/api/customers` with no password returns 401). Never delete it: if unset, requests with no password pass every admin check (`undefined === undefined`). |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | `lib/db.js:2-3` | required; service-role key is a full-access secret |
-| `RESEND_API_KEY` | `lib/email.js:1` | if unset, emails are silently skipped (only a console warning) |
-| `EMAIL_FROM` | `lib/email.js:2` | optional; overrides the default sender `Sillito Sourdough <hello@sillitosourdough.org>`. Must be an @sillitosourdough.org address. |
-| `ADMIN_EMAIL` | `api/orders.js:6` | optional; gets a "New order" email. If unset, Koby gets no new-order email. |
-| `SITE_URL` | `api/portal.js:6`, `api/notify.js:6` | base URL for magic links and blast buttons. If unset, magic links are broken (start with `/portal.html`). Should be `https://www.sillitosourdough.org`. Whether it is set in Vercel: unverified. |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | `lib/db.js` (`BASE`, `KEY`) | required; service-role key is a full-access secret |
+| `RESEND_API_KEY` | `lib/email.js` (`KEY`) | if unset, emails are silently skipped (only a console warning) |
+| `EMAIL_FROM` | `lib/email.js` (`FROM`) | optional; overrides the default sender `Sillito Sourdough <hello@sillitosourdough.org>`. Must be an @sillitosourdough.org address. |
+| `ADMIN_EMAIL` | `api/orders.js` (`ADMIN_EMAIL`) | optional; gets a "New order" email. If unset, Koby gets no new-order email. |
+| `SITE_URL` | `api/portal.js` (`SITE_URL`), `api/notify.js` (`SITE_URL`) | base URL for magic links and blast buttons. If unset, magic links are broken (start with `/portal.html`). Should be `https://www.sillitosourdough.org`. Whether it is set in Vercel: unverified. |
 | `PORTAL_SECRET` | `SECRET` in `api/portal.js` | signs magic links. **No fallback since 2026-11-15:** if it is missing, no link is sent and none verifies (the portal stops; ordering is unaffected). Before that the code fell back to a placeholder written in the file. **Verified set in Vercel 2026-10-28 and 2026-11-15** (a token signed with the old placeholder was rejected with 401). Never delete it. |
-| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | `lib/sms.js:1-3` | SMS; not configured, SMS silently skipped |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` | `lib/sms.js` (`SID`, `TOKEN`, `FROM`) | SMS; not configured, SMS silently skipped |
 The local `.env` (git-ignored) only matters for running locally. It has `ADMIN_PASSWORD`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`; it has no Resend key. Do not rewrite it with PowerShell `Set-Content -Encoding utf8` (adds a BOM that breaks parsing); edit it in an editor.
 
 ## 3. How a change goes live
@@ -54,24 +54,24 @@ git push Sillito-Sourdough-Landing-Page master
 ## 4. How do I change X
 | I want to change | Where | Code or config? |
 |---|---|---|
-| Products, prices, deals (e.g. "3 for $10"), descriptions, hide a product | **Admin page > Products** (writes to the Supabase `products` table via `api/products.js:28-40`; editable fields listed at line 32). Initial seed data: `supabase-schema-v2.sql:92-104`. | config (admin UI) |
-| Add a brand-new product | No admin UI. Insert a row in Supabase table `products` (columns in `supabase-schema-v2.sql:4-14`; `id` is a short text key like `cookies`) via the Supabase Table Editor. Then add capacity for it on slots. | database |
-| Price text shown on homepage | `index.html:180` ("Cookies: $4 each or $10 for 3") is **hard-coded text**, separate from the DB price. Update both. | code |
-| Pickup locations (names, notes) | Supabase table `locations` (seed at `supabase-schema-v2.sql:107-119`; read by `api/locations.js:15`). No admin UI found for editing; use Supabase Table Editor. Only rows with `active = true` show. | database |
-| Bake / pickup days and times | **Admin page > Schedule** creates recurring templates (`api/schedule.js:33-49`: location, weekday, start/end), then "generate slots" for a date range (`api/schedule.js:63-120`). One-off slots: admin > Slots (`api/slots.js:41-61`). Customers only see slots that exist. | config (admin UI) |
-| How many items per pickup (capacity) | Per slot per product: admin > Slots (`api/slots.js:68-79`). Blank capacity = unlimited. The order check is `api/orders.js:163-176`. | config |
-| **Order cutoff** ("how close to pickup can people still order") | `api/slots.js:10-14`: customers only see slots dated **today + 2 days or later**. Change the `2` on line 12. Admin sees all slots. | code |
-| **Sold out** | Set that slot's capacity equal to what is booked (admin > Slots), or cancel the slot (`api/slots.js:63-66`, admin button). The order API refuses over-capacity orders (`api/orders.js:170`). | config |
-| **Pause all ordering** | Cancel or do not generate future slots: with no slots, the homepage bar says "No pickups scheduled yet" (`script.js:46-51`) and no date can be chosen. Alternatively set every product inactive in admin > Products (hides them, `api/products.js:18-20`). | config |
-| Homepage text | Header tagline `index.html:19`; intro paragraph `index.html:32`; payment section `index.html:163-182`; footer `index.html:190-196`. | code |
+| Products, prices, deals (e.g. "3 for $10"), descriptions, hide a product | **Admin page > Products** (writes to the Supabase `products` table via the PATCH handler in `api/products.js`; editable fields are the `allowed` list there). Initial seed data: `supabase-schema-v2.sql` (section "Seed: products"). | config (admin UI) |
+| Add a brand-new product | No admin UI. Insert a row in Supabase table `products` (columns in `supabase-schema-v2.sql`, `create table if not exists products`; `id` is a short text key like `cookies`) via the Supabase Table Editor. Then add capacity for it on slots. | database |
+| Price text shown on homepage | `index.html` (search `price-note`: "Cookies: $4 each or $10 for 3") is **hard-coded text**, separate from the DB price. Update both. | code |
+| Pickup locations (names, notes) | Supabase table `locations` (seed in `supabase-schema-v2.sql`, section "Seed: locations"; read by `api/locations.js`). No admin UI found for editing; use Supabase Table Editor. Only rows with `active = true` show. | database |
+| Bake / pickup days and times | **Admin page > Schedule** creates recurring templates (`createTemplate` in `api/schedule.js`: location, weekday, start/end), then "generate slots" for a date range (`generateSlots` in `api/schedule.js`). One-off slots: admin > Slots (`createSlot` in `api/slots.js`). Customers only see slots that exist. | config (admin UI) |
+| How many items per pickup (capacity) | Per slot per product: admin > Slots (`updateCapacity` in `api/slots.js`). Blank capacity = unlimited. The order check is the "Validate capacity for each item" block in `placeOrder` in `api/orders.js`. | config |
+| **Order cutoff** ("how close to pickup can people still order") | `bufferDate` in `api/slots.js`: customers only see slots dated **today + 2 days or later**. Change the `2` in `d.setDate(d.getDate() + 2)`. Admin sees all slots. | code |
+| **Sold out** | Set that slot's capacity equal to what is booked (admin > Slots), or cancel the slot (`cancelSlot` in `api/slots.js`, admin button). The order API refuses over-capacity orders (`placeOrder` in `api/orders.js`). | config |
+| **Pause all ordering** | Cancel or do not generate future slots: with no slots, the homepage bar says "No pickups scheduled yet" (`loadAvailBar` in `script.js`) and no date can be chosen. Alternatively set every product inactive in admin > Products (hides them, the `active=eq.true` filter in `api/products.js`). | config |
+| Homepage text | Header tagline `index.html` (`class="tagline"`); intro paragraph `index.html` (inside `<section class="hero">`); payment section `index.html` (`<section class="payment-section">`); footer `index.html` (`<footer>`). | code |
 | Photos | The homepage currently uses **no photos** (no `<img>` tags in `index.html`). To add one, put the file in the repo folder and add an `<img src="file.jpg">` in `index.html`; styling in `styles.css`. | code |
-| Venmo handle | `index.html:177` (link and label) | code |
-| Order confirmation / "in the queue" / cancelled emails (wording, colours, signature) | `lib/email.js`: queue email `:103-118`, confirmed `:120-141`, cancelled `:143-150`, admin new-order `:152-173`, magic link `:175-182`, blast `:184-192`, header/footer chrome `:16-36`. Subject lines are in `api/orders.js:58, 99, 117, 225, 230`. | code |
-| Email sender address | Default is `lib/email.js:2`; or set `EMAIL_FROM` in Vercel (overrides the default). Must be `@sillitosourdough.org`. | env / code |
-| Where new-order alerts go | Set `ADMIN_EMAIL` in Vercel (`api/orders.js:6,228`). | env |
-| **Admin password** | Vercel dashboard > Settings > Environment Variables > edit `ADMIN_PASSWORD` > Save > **Redeploy**. Also update the local `.env` if you run locally. Not in code. Login check: `admin.js:27-45`. | env |
-| Magic-link lifetime (24 h) | `api/portal.js:15` | code |
-| Text-message wording | `api/orders.js:73, 105, 123, 235` (no effect until Twilio is set up) | code |
+| Venmo handle | `index.html` (`class="btn btn-venmo"`, link and label) | code |
+| Order confirmation / "in the queue" / cancelled emails (wording, colours, signature) | `lib/email.js`: queue email (`orderReceived`), confirmed (`orderConfirmed`), cancelled (`orderCancelled`), admin new-order (`adminNewOrder`), magic link (`magicLink`), blast (`blast`), header/footer chrome (`wrap`). Subject lines are in `api/orders.js` (search `subject:`). | code |
+| Email sender address | Default is `FROM` in `lib/email.js`; or set `EMAIL_FROM` in Vercel (overrides the default). Must be `@sillitosourdough.org`. | env / code |
+| Where new-order alerts go | Set `ADMIN_EMAIL` in Vercel (`ADMIN_EMAIL` in `api/orders.js`). | env |
+| **Admin password** | Vercel dashboard > Settings > Environment Variables > edit `ADMIN_PASSWORD` > Save > **Redeploy**. Also update the local `.env` if you run locally. Not in code. Login check: the `login-btn` click handler in `admin.js`. | env |
+| Magic-link lifetime (24 h) | `makeToken` in `api/portal.js` (`24 * 3600 * 1000`) | code |
+| Text-message wording | `api/orders.js` (search `sendSMS(`) (no effect until Twilio is set up) | code |
 
 ## 5. Things that break and how to fix them
 **Order emails not arriving.** Until 2026-11-13 the order code answered the customer BEFORE the emails had finished sending (un-awaited "fire-and-forget"). Vercel freezes a function the moment it answers, so those sends could be cut off and never leave: the most likely reason the queue email and the admin "New order" email were unreliable while the admin-page emails (which were awaited) worked. **Fixed 2026-11-13:** `placeOrder` in `api/orders.js` now waits for the notifications (`Promise.allSettled`), and `sendEmail` / `sendSMS` give up after 6 seconds and never throw, so a broken email service still cannot fail an order. A "successful" order therefore still does not PROVE an email went out; if they are missing, check in order:
@@ -98,17 +98,17 @@ git push Sillito-Sourdough-Landing-Page master
 
 **OPEN ITEM (as of 2026-10-28): a real test order has never been placed to confirm emails arrive end-to-end.** The `.com` to `.org` sender fix (commit `a93d200`, 2026-09-17) is deployed, but nobody has verified an email actually lands. Do this: place a real order on the live site with Koby's own email (pick a slot, tiny quantity), confirm the "You're in the queue" email arrives, then in admin Confirm the order and check the second email, then Cancel it (this restores capacity). Check `ADMIN_EMAIL` is set so the new-order alert is tested too.
 
-**Admin login says "Wrong password".** Local `.env` and Vercel disagree (Koby has hit this before). The live site uses the Vercel value. Reset it in Vercel (see section 4) and redeploy. Note: the login test is `admin.js:35`, a call to `/api/availability` that returns 401 on mismatch. A 500 or network error also shows "Wrong password", so also check the Supabase/Vercel logs.
+**Admin login says "Wrong password".** Local `.env` and Vercel disagree (Koby has hit this before). The live site uses the Vercel value. Reset it in Vercel (see section 4) and redeploy. Note: the login test is the `login-btn` click handler in `admin.js`, a call to `/api/availability` that returns 401 on mismatch. A 500 or network error also shows "Wrong password", so also check the Supabase/Vercel logs.
 
 **Pages load but products/dates are empty or admin shows errors (Supabase).**
 - Free Supabase projects **pause after about a week of inactivity**: Supabase dashboard > Restore project. Public endpoints then return 500.
-- `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` wrong or missing in Vercel: `lib/db.js:15` throws "SUPABASE_URL not configured".
-- Row Level Security: the schema files switch RLS **off** on all tables (`supabase-schema.sql`, `supabase-schema-v2.sql:83-89`) and the server uses the service-role key, which bypasses RLS anyway. If RLS got turned on, inserts can fail. Note `200 []` from Supabase can hide a blocked write.
+- `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` wrong or missing in Vercel: `q` in `lib/db.js` throws "SUPABASE_URL not configured".
+- Row Level Security: the schema files switch RLS **off** on all tables (`supabase-schema.sql`, `supabase-schema-v2.sql`, section "Disable RLS on new tables") and the server uses the service-role key, which bypasses RLS anyway. If RLS got turned on, inserts can fail. Note `200 []` from Supabase can hide a blocked write.
 - Missing table errors: the SQL files were not run. Run `supabase-schema.sql` then `supabase-schema-v2.sql` in the Supabase SQL Editor (both are safe to re-run).
 
 **Build/deploy fails on Vercel.** There is no build step, so failures are usually: a JavaScript syntax error in a file under `api/` or `lib/` (check the Vercel build log), a bad `vercel.json` (currently just `{}`; leave it), or an empty `index.html` (this caused a blank page once, commit `ea43bfc`). Fix by promoting the previous deployment, then repair the file. Run `node --check api\orders.js` on a file you edited to catch syntax errors (needs Node).
 
-**Magic link (view my orders) goes to a broken URL.** `SITE_URL` is missing in Vercel (`api/portal.js:78`).
+**Magic link (view my orders) goes to a broken URL.** `SITE_URL` is missing in Vercel (`SITE_URL()` in `api/portal.js`).
 
 ## 6. Do NOT
 - **Do not edit `S:\projects\side\websites\sillito-sourdough-2025`.** It is the old 2025 version. The live one is `S:\projects\main\sillito-sourdough`.
@@ -117,7 +117,7 @@ git push Sillito-Sourdough-Landing-Page master
 - **Do not trust the local `.env` as what production uses.** Vercel's env vars are what run.
 - **Do not paste or commit** `.env`, the Supabase service-role key, the Resend key, or the admin password. `.env` is git-ignored; keep it that way.
 - Do not run `vercel env pull` or `vercel deploy` casually; `env pull` writes secrets to disk.
-- Do not delete the `products`, `pickup_slots`, `orders`, `customers` tables or rerun seed SQL carelessly: `supabase-schema-v2.sql:100-104` overwrites product prices and descriptions on re-run.
+- Do not delete the `products`, `pickup_slots`, `orders`, `customers` tables or rerun seed SQL carelessly: `supabase-schema-v2.sql` (section "Seed: products") overwrites product prices and descriptions on re-run.
 - Do not use Cloudflare/DNS changes on `sillitosourdough.org` without checking Resend's DNS records (SPF/DKIM) stay intact - deleting them breaks email.
 - Do not "fix" `config.js` (`LOAVES_AVAILABLE`): nothing loads it (not referenced by any HTML or JS). It is a leftover from the old weekly-count system.
 - Do not email-blast without testing on yourself first (admin > Notify sends to real customers, `api/notify.js`).
@@ -136,7 +136,7 @@ git push Sillito-Sourdough-Landing-Page master
 | `api/customers.js` | Admin customer list |
 | `api/notify.js` | Admin email/SMS blasts, waitlist notifications |
 | `api/portal.js` | Magic-link create/verify (HMAC signed, 24h), customer order view/cancel |
-| `api/availability.js` | OLD weekly-availability system (`weeks` table). Still used as the admin login probe (`admin.js:35`). |
+| `api/availability.js` | OLD weekly-availability system (`weeks` table). Still used as the admin login probe (the `login-btn` click handler in `admin.js`). |
 | `lib/db.js` | Tiny Supabase REST wrapper (select/insert/upsert/update/del) |
 | `lib/email.js` | Resend sender and all HTML email templates |
 | `lib/sms.js` | Twilio sender (inactive without env vars) |
@@ -147,14 +147,14 @@ git push Sillito-Sourdough-Landing-Page master
 ## 8. Hard-coded things that could become settings
 | Value | Where | Move to | Ease |
 |---|---|---|---|
-| Order cutoff buffer (2 days) | `api/slots.js:12` | env var `ORDER_BUFFER_DAYS` (one-line change) | Easy |
-| Homepage price note and Venmo handle | `index.html:177,180` | env/admin; or just edit the text | Easy (edit) / Medium (make dynamic) |
+| Order cutoff buffer (2 days) | `bufferDate` in `api/slots.js` | env var `ORDER_BUFFER_DAYS` (one-line change) | Easy |
+| Homepage price note and Venmo handle | `index.html` (`btn-venmo`, `price-note`) | env/admin; or just edit the text | Easy (edit) / Medium (make dynamic) |
 | Pickup locations editing | no admin UI (Supabase table only) | add admin page using existing `locations` table | Medium |
 | Add-new-product UI | admin has only edit | add POST to `api/products.js` plus a form | Medium |
-| Default sender / "Austin, TX" / copy in emails | `lib/email.js:2,27,31` | `EMAIL_FROM` env already exists; copy would need a settings table | Easy (env) / Medium |
-| Magic-link lifetime (24 h) | `api/portal.js:15` | env var | Easy |
-| Recurring-order preference `loaves: 1` | `api/orders.js:216` | n/a, probably dead feature | Easy |
-| Hero text, tagline, payment blurb | `index.html:19,32,163-182` | Supabase `settings` table plus admin form | Hard-ish (needs fetch + admin UI) |
-| Email subject lines | `api/orders.js:58,99,117,225,230` | env or settings table | Easy |
-| Chewy affiliate link placeholder `CHEWY_AFFILIATE_LINK` | `index.html:194` | replace with real URL or delete the line (it is a literal broken link today) | Easy |
+| Default sender / "Austin, TX" / copy in emails | `lib/email.js` (`FROM`; "Austin, TX" in `wrap`) | `EMAIL_FROM` env already exists; copy would need a settings table | Easy (env) / Medium |
+| Magic-link lifetime (24 h) | `makeToken` in `api/portal.js` | env var | Easy |
+| Recurring-order preference `loaves: 1` | `api/orders.js` (`recurring_preferences` in `placeOrder`) | n/a, probably dead feature | Easy |
+| Hero text, tagline, payment blurb | `index.html` (`class="tagline"`, `<section class="hero">`, `<section class="payment-section">`) | Supabase `settings` table plus admin form | Hard-ish (needs fetch + admin UI) |
+| Email subject lines | `api/orders.js` (search `subject:`) | env or settings table | Easy |
+| Chewy affiliate link placeholder `CHEWY_AFFILIATE_LINK` | `index.html` (search `CHEWY_AFFILIATE_LINK`) | replace with real URL or delete the line (it is a literal broken link today) | Easy |
 | Admin auth (password sent in URL query on GETs, shared across all endpoints) | every `api/*.js` | proper session/auth | Hard. Also: if `ADMIN_PASSWORD` is ever unset in Vercel, `undefined === undefined` lets API calls with no password through. Keep it set. |
